@@ -1,5 +1,5 @@
 from crewai import Agent
-from SolarizationAgent.tools import location_tool
+from .tools import get_location
 
 solarization_helper = Agent(
     role="Solar Panel Installation Concierge",
@@ -10,5 +10,5 @@ solarization_helper = Agent(
     confirm successful installation transactions, and ensure new solar panel systems are registered to the user's existing smart home device list. 
     You work efficiently and accurately to deliver a seamless experience from selection to integration.""",
     verbose=True,
-    tools=[location_tool],  # Extend with tools as needed
+    tools=[get_location],  # Extend with tools as needed
 )

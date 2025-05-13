@@ -3,7 +3,7 @@ from fastapi import FastAPI
 
 from .models import ChatRequest, ChatResponse
 
-from orchestrator import Orchestrator
+from .orchestrator import Orchestrator
 
 app = FastAPI(
     title="CrewAI FastAPI Server",
@@ -19,7 +19,8 @@ async def health() -> dict[str, str]:
 
 @app.post("/chat", response_model=ChatResponse)
 async def chat(request: ChatRequest):
-
+    orchestrator = Orchestrator(request)
+    print(orchestrator.run())
     pass
 
 
