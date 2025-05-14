@@ -1,5 +1,6 @@
 from langchain.agents import AgentExecutor, create_openai_tools_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.output_parsers import StrOutputParser
 from app.handlers.base_handler import BaseQueryHandler
 from app.core.history_manager import InMemoryChatHistory  # or BaseChatMessageHistory
 
@@ -37,7 +38,6 @@ class SolarQueryHandler(BaseQueryHandler):
                 f"Could not create OpenAI tools agent for SolarHandler (LLM: {self.llm_config.model_name}): {e}. Ensure the model supports tool calling."
             )
             # Fallback like in GenericQueryHandler
-            from langchain.chains.llm import LLMChain
 
             simple_prompt = ChatPromptTemplate.from_messages(
                 [
@@ -49,9 +49,9 @@ class SolarQueryHandler(BaseQueryHandler):
                     ("human", "{input}"),
                 ]
             )
-            self.agent_executor = LLMChain(llm=self.llm, prompt=simple_prompt)
+            self.agent_executor = simple_prompt | self.llm | StrOutputParser()
             print(
-                f"Warning: Agent creation for SolarQueryHandler failed. Tool usage might be affected."
+                "Warning: Agent creation for SolarQueryHandler failed. Tool usage might be affected."
             )
             return
 
@@ -65,23 +65,28 @@ class SolarQueryHandler(BaseQueryHandler):
 
         history_messages = chat_history.messages if chat_history else []
         try:
-            response = await self.agent_executor.ainvoke(
+            raw_response = await self.agent_executor.ainvoke(
                 {"input": query, "chat_history": history_messages}
             )
-            return response.get(
-                "output", "Sorry, I could not provide a solar-specific response."
-            )
+
+            if isinstance(raw_response, dict):  # Output from AgentExecutor
+                ai_response = raw_response.get(
+                    "output",
+                    f"Sorry, {self.__class__.__name__} could not extract output from response.",
+                )
+            elif isinstance(
+                raw_response, str
+            ):  # Output from LCEL chain with StrOutputParser
+                ai_response = raw_response
+            else:
+                # Log this unexpected type for debugging
+                print(
+                    f"Unexpected response type from agent_executor in {self.__class__.__name__}: {type(raw_response)}"
+                )
+                ai_response = f"Sorry, {self.__class__.__name__} received an unexpected response format."
+            return ai_response
         except Exception as e:
-            print(f"Error during SolarQueryHandler agent execution: {e}")
-            try:
-                if "chat_history" in str(e) and isinstance(
-                    self.agent_executor, LLMChain
-                ):
-                    response = await self.agent_executor.ainvoke({"input": query})
-                    return response.get(
-                        "text", "Sorry, I could not generate a response."
-                    )
-                return f"An error occurred while processing your solar query: {e}"
-            except Exception as final_e:
-                print(f"Fallback error in SolarQueryHandler: {final_e}")
-                return f"A critical error occurred in solar processing: {final_e}"
+            print(f"Error during {self.__class__.__name__} agent execution: {e}")
+            # import traceback # Optional: for more detailed error logging during development
+            # traceback.print_exc()
+            return f"An error occurred while processing your solar query in {self.__class__.__name__}. Please try again."

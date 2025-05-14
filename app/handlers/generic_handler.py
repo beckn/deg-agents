@@ -4,6 +4,7 @@ from langchain.agents import (
     create_openai_tools_agent,
 )  # or other agent types
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from langchain_core.output_parsers import StrOutputParser
 from app.handlers.base_handler import BaseQueryHandler
 from app.core.history_manager import InMemoryChatHistory  # or BaseChatMessageHistory
 
@@ -43,9 +44,6 @@ class GenericQueryHandler(BaseQueryHandler):
             # As a very basic fallback, you might create a simple chain without tools or a different agent type
             # For now, we'll let it proceed and it might fail at runtime if tools are called.
             # A more robust solution would be to select agent type based on LLM capabilities.
-            # from langchain.chains.llm import LLMChain
-            # self.agent_executor = LLMChain(llm=self.llm, prompt=ChatPromptTemplate.from_template("System: You are a helpful assistant.\nHuman: {input}\nAI:"))
-            # return
 
             # If using a ReAct style agent (more general but older)
             # from langchain.agents import initialize_agent, AgentType
@@ -64,8 +62,6 @@ class GenericQueryHandler(BaseQueryHandler):
             )
             # Create a dummy agent executor if the primary one fails to allow the system to run
             # This is a simplified approach for now.
-            from langchain.chains.llm import LLMChain
-
             simple_prompt = ChatPromptTemplate.from_messages(
                 [
                     ("system", "You are a helpful assistant."),
@@ -73,7 +69,7 @@ class GenericQueryHandler(BaseQueryHandler):
                     ("human", "{input}"),
                 ]
             )
-            self.agent_executor = LLMChain(llm=self.llm, prompt=simple_prompt)
+            self.agent_executor = simple_prompt | self.llm | StrOutputParser()
             return
 
         self.agent_executor = AgentExecutor(
@@ -90,24 +86,28 @@ class GenericQueryHandler(BaseQueryHandler):
 
         history_messages = chat_history.messages if chat_history else []
         try:
-            response = await self.agent_executor.ainvoke(
+            raw_response = await self.agent_executor.ainvoke(
                 {"input": query, "chat_history": history_messages}
             )
-            return response.get("output", "Sorry, I could not generate a response.")
+
+            if isinstance(raw_response, dict):  # Output from AgentExecutor
+                ai_response = raw_response.get(
+                    "output",
+                    f"Sorry, {self.__class__.__name__} could not extract output from response.",
+                )
+            elif isinstance(
+                raw_response, str
+            ):  # Output from LCEL chain with StrOutputParser
+                ai_response = raw_response
+            else:
+                # Log this unexpected type for debugging
+                print(
+                    f"Unexpected response type from agent_executor in {self.__class__.__name__}: {type(raw_response)}"
+                )
+                ai_response = f"Sorry, {self.__class__.__name__} received an unexpected response format."
+            return ai_response
         except Exception as e:
-            print(f"Error during GenericQueryHandler agent execution: {e}")
-            # Fallback for models that don't handle chat_history well in invoke or if agent is simple LLMChain
-            try:
-                # If agent_executor is just an LLMChain, it might not expect 'chat_history'
-                # This is a simplified error handling.
-                if "chat_history" in str(e) and isinstance(
-                    self.agent_executor, LLMChain
-                ):
-                    response = await self.agent_executor.ainvoke({"input": query})
-                    return response.get(
-                        "text", "Sorry, I could not generate a response."
-                    )  # LLMChain output key is 'text'
-                return f"An error occurred while processing your request: {e}"
-            except Exception as final_e:
-                print(f"Fallback error in GenericQueryHandler: {final_e}")
-                return f"A critical error occurred: {final_e}"
+            print(f"Error during {self.__class__.__name__} agent execution: {e}")
+            # import traceback # Optional: for more detailed error logging during development
+            # traceback.print_exc()
+            return f"An error occurred while processing your request in {self.__class__.__name__}. Please try again."
