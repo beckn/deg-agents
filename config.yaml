@@ -1,0 +1,86 @@
+# LLM Configurations
+# List of available LLMs that can be referenced by other components
+llms:
+  default_chat_model:
+    provider: "openai" # or 'azure_openai', 'anthropic', 'google_vertexai', etc.
+    model_name: "gpt-4.1-nano"
+    # api_key_env: "OPENAI_API_KEY" # Environment variable for the API key
+    temperature: 0.7
+    # other model-specific parameters...
+  routing_model:
+    provider: "openai"
+    model_name: "gpt-4.1-nano" # Cheaper model for routing
+    # api_key_env: "OPENAI_API_KEY"
+    temperature: 0.0
+  solar_query_model:
+    provider: "openai"
+    model_name: "gpt-4.1-nano" # More capable model for specific tasks
+    # api_key_env: "OPENAI_API_KEY"
+    temperature: 0.5
+
+# Query Router Configuration
+query_router:
+  llm_config_name: "routing_model" # References an LLM from the 'llms' section
+  # Prompt template for routing can be defined here or loaded from a file
+  # For simplicity, we'll assume the QueryRouter class handles this.
+  # Handlers are mapped by the 'route_key' returned by the router.
+  routes:
+    - route_key: "generic"
+      handler_config_name: "generic_query_handler"
+    - route_key: "solar_installation"
+      handler_config_name: "solar_query_handler"
+    # ... other routes
+
+# Handler Configurations
+# Defines available query handlers
+handlers:
+  generic_query_handler:
+    class_path: "app.handlers.generic_handler.GenericQueryHandler" # Path for dynamic import
+    llm_config_name: "default_chat_model"
+    # Tools assigned to this handler
+    tools:
+      common: # List of common tool config names
+        - "general_knowledge_tool"
+      specific: [] # List of specific tool config names
+    # prompt_template_path: "prompts/generic_handler_prompt.txt" # Optional
+
+  solar_query_handler:
+    class_path: "app.handlers.solar_handler.SolarQueryHandler"
+    llm_config_name: "solar_query_model"
+    tools:
+      common:
+        - "general_knowledge_tool"
+      specific:
+        - "solar_panel_calculator_tool"
+    # memory_config: ... # Configuration for handler-specific memory, if needed
+
+# Tool Configurations
+# Defines available tools that handlers can use
+tools:
+  general_knowledge_tool:
+    class_path: "app.tools.common_tools.general_knowledge.GeneralKnowledgeTool"
+    # Any specific config for this tool, e.g.,
+    # description: "Answers general knowledge questions."
+    # retriever_config_name: "default_retriever" # If it uses a knowledge base
+
+  solar_panel_calculator_tool:
+    class_path: "app.tools.specific_tools.solar_tools.panel_calculator.SolarPanelCalculatorTool"
+    # description: "Calculates potential solar panel output and savings."
+    # api_endpoint: "https://api.solarcalculator.com/v1" # Example external API
+
+# Chat History Configuration
+chat_history:
+  provider: "in_memory" # "redis", "database", "file" etc.
+  # provider_specific_config:
+  #   max_entries_per_client: 100 # For in_memory
+
+# Knowledge Base Stubs Configuration (Optional, for future expansion)
+# knowledge_bases:
+#   company_faq_kb:
+#     type: "vector_store"
+#     vector_db_provider: "chroma" # or "faiss", "pinecone"
+#     embedding_model_config_name: "default_embedding_model" # (Needs to be defined in 'llms' or a new 'embeddings' section)
+#     # connection_args: ...
+#   product_docs_kb:
+#     type: "document_retriever"
+#     # ...
