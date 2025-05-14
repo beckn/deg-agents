@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException
 from app.models.chat import ChatRequest, ChatResponse
 from app.core.orchestrator import ClientOrchestrator  # Import the orchestrator
+from app.core.history_manager import chat_history_manager
 
 router = APIRouter(prefix="/chat", tags=["chat"])
 
@@ -63,7 +64,6 @@ async def clear_client_state(client_id: str):
     """
     ClientOrchestrator.clear_client_instance(client_id)
     # Also clear history from the global manager
-    from app.core.history_manager import chat_history_manager
 
     chat_history_manager.clear_history(client_id)
     print(f"State and history cleared for client_id: {client_id}")

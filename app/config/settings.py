@@ -1,8 +1,8 @@
-import yaml
-from pydantic import BaseModel, Field
-from typing import Dict, List, Any, Optional
-from dotenv import load_dotenv
 import os
+import yaml
+from typing import Dict, List, Optional
+from pydantic import BaseModel, Field
+from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()

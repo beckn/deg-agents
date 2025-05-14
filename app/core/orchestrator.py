@@ -1,9 +1,6 @@
 from typing import Dict, Optional
 from app.config.settings import settings, AppConfig, HandlerConfig
-from app.core.history_manager import (
-    ChatHistoryManager,
-    chat_history_manager,
-)  # Use the global instance
+from app.core.history_manager import chat_history_manager
 from app.core.query_router import QueryRouter
 from app.handlers.base_handler import BaseQueryHandler
 from app.handlers.utils import import_class

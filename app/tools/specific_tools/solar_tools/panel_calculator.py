@@ -1,6 +1,6 @@
-from langchain.tools import BaseTool
 from typing import Type, Any
 from pydantic import BaseModel, Field
+from langchain.tools import BaseTool
 
 
 class SolarPanelInput(BaseModel):
