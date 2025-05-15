@@ -14,7 +14,7 @@ class GenericQueryHandler(BaseQueryHandler):
             [
                 (
                     "system",
-                    "You are a helpful assistant. Answer the user's questions to the best of your ability. You have access to the following tools.",
+                    "You are a helpful assistant with specialized knowledge in solar panel installations and DFP (Demand Flexibility Program) queries. You have access to tools to help with these topics.",
                 ),
                 MessagesPlaceholder(variable_name="chat_history", optional=True),
                 ("human", "{input}"),

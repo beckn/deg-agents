@@ -41,7 +41,9 @@ class QueryRouter:
             ):  # Special case for a more explicit generic description
                 description = f"'{route.route_key}' for general conversation, questions not covered by other categories, or if unsure, especially if the history is empty or irrelevant."
             elif "solar" in route.route_key.lower():
-                description = f"'{route.route_key}' for questions specifically about solar panels, solar energy, installation, and related calculations."
+                description = f"'{route.route_key}' for questions specifically about solar panels, solar energy, installation, and related topics."
+            elif "dfp" in route.route_key.lower():
+                description = f"'{route.route_key}' for questions specifically about DFP plans (Demand Flexibility Program), power savings, and related topics."
 
             route_descriptions.append(description)
 
