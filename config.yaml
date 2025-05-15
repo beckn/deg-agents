@@ -8,12 +8,12 @@ llms:
 
   routing_model:
     provider: "openai"
-    model_name: "gpt-4.1-nano" # Lightweight model for routing incoming queries
+    model_name: "gpt-4.1-mini" # Lightweight model for routing incoming queries
     temperature: 0.0 # Deterministic output preferred for consistent routing decisions
 
   solar_query_model:
     provider: "openai"
-    model_name: "gpt-4.1-nano" # Specialized model for handling solar-related queries
+    model_name: "gpt-4.1-mini" # Specialized model for handling solar-related queries
     temperature: 0.5 # Balanced creativity and reliability for task-specific answers
 
 # Query Router Configuration
@@ -45,8 +45,12 @@ handlers:
       common:
         - "general_knowledge_tool" # General utility tool
       specific:
-        - "solar_panel_calculator_tool" # Tool for performing solar calculations
+        # - "solar_panel_calculator_tool" # Tool for performing solar calculations
     # memory_config can be added here if persistent memory is needed
+        - "solar_retail_search"
+        - "solar_retail_select"
+        # - "solar_retail_init"
+        # - "solar_retail_confirm"
 
 # Tool Configurations
 # Defines external utilities or capabilities that handlers can invoke
@@ -55,9 +59,26 @@ tools:
     class_path: "app.tools.common_tools.general_knowledge.GeneralKnowledgeTool"
     # Provides general factual knowledge, can optionally link to a retriever
 
-  solar_panel_calculator_tool:
-    class_path: "app.tools.specific_tools.solar_tools.panel_calculator.SolarPanelCalculatorTool"
-    # Performs calculations related to solar panel output and financial savings
+  # solar_panel_calculator_tool:
+  #   class_path: "app.tools.specific_tools.solar_tools.panel_calculator.SolarPanelCalculatorTool"
+  #   # Performs calculations related to solar panel output and financial savings
+
+  solar_retail_search:
+    class_path: "app.tools.specific_tools.solar_tools.retail_search.SolarRetailSearchTool"
+    # Searches for solar retailers in a specific area
+
+  solar_retail_select:
+    class_path: "app.tools.specific_tools.solar_tools.retail_select.SolarRetailSelectTool"
+  #   # Selects a solar retailer from a list of options
+
+  # solar_retail_init:
+  #   class_path: "app.tools.specific_tools.solar_tools.retail_init.SolarRetailInitTool"
+  #   # Initializes the solar retail process
+
+  # solar_retail_confirm:
+  #   class_path: "app.tools.specific_tools.solar_tools.retail_confirm.SolarRetailConfirmTool"
+    # Confirms the solar retail process
+
 
 # Chat History Configuration
 # Controls how and where chat histories are stored

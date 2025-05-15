@@ -1,6 +1,6 @@
 from typing import Dict, List, Tuple, Optional
 from langchain_core.language_models import BaseChatModel
-from langchain_core.prompts import ChatPromptTemplate
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
 
 from app.config.settings import settings, QueryRouterConfig, LLMConfig
@@ -39,7 +39,7 @@ class QueryRouter:
             if (
                 route.route_key == "generic"
             ):  # Special case for a more explicit generic description
-                description = f"'{route.route_key}' for general conversation, questions not covered by other categories, or if unsure."
+                description = f"'{route.route_key}' for general conversation, questions not covered by other categories, or if unsure, especially if the history is empty or irrelevant."
             elif "solar" in route.route_key.lower():
                 description = f"'{route.route_key}' for questions specifically about solar panels, solar energy, installation, and related calculations."
 
@@ -47,19 +47,20 @@ class QueryRouter:
 
         routing_instructions = (
             "You are an expert at routing a user's query to the correct specialized query handler. "
-            "Based on the user's query and the conversation history, determine which of the following "
+            "Based on the user's query AND the preceding conversation history (if any), determine which of the following "
             "categories the query falls into. "
             "Only output the category key string (e.g., 'generic', 'solar_installation'). Do NOT add any other text or explanation.\n\n"
             "Available categories:\n"
             + "\n".join(f"- {desc}" for desc in route_descriptions)
-            + "\n\nIf the query is a follow-up to a previous topic, try to route it to the same handler if appropriate."
-            "If the query is too ambiguous or doesn't fit any specific category, route it to 'generic'."
+            + "\n\nIf the query is a follow-up to a previous topic discussed in the chat history, try to route it to the same handler if appropriate. "
+            "If the current query introduces a new topic, route it based on the query's content. "
+            "If the query is too ambiguous or doesn't fit any specific category even considering the history, route it to 'generic'."
         )
 
         prompt = ChatPromptTemplate.from_messages(
             [
                 ("system", routing_instructions),
-                # MessagesPlaceholder(variable_name="chat_history", optional=True), # Consider adding history for context
+                MessagesPlaceholder(variable_name="chat_history", optional=True),
                 ("human", "User query: {query}\n\nOutput only the category key:"),
             ]
         )
@@ -69,16 +70,19 @@ class QueryRouter:
         self, query: str, chat_history: Optional[InMemoryChatHistory] = None
     ) -> str:
         """
-        Routes the query to the appropriate handler based on LLM classification.
+        Routes the query to the appropriate handler based on LLM classification,
+        considering chat history.
         Returns the route_key (e.g., "generic", "solar_installation").
         """
         chain = self.prompt | self.llm | self.output_parser
 
-        # history_messages = chat_history.messages if chat_history else []
-        # For now, router doesn't use history to simplify, but it can be added:
-        # result = await chain.ainvoke({"query": query, "chat_history": history_messages})
+        history_messages = []
+        if chat_history and chat_history.messages:
+            history_messages = chat_history.messages
+        # Ensure history_messages is always a list, even if empty
+        # The MessagesPlaceholder will handle it correctly if it's an empty list.
 
-        result = await chain.ainvoke({"query": query})
+        result = await chain.ainvoke({"query": query, "chat_history": history_messages})
 
         # Validate the result against known route_keys
         valid_route_keys = {route.route_key for route in self.router_config.routes}
