@@ -21,3 +21,15 @@ SELECT_BASE_URL = "https://bap-ps-client-deg.becknprotocol.io/select"
 
 # Context action for select
 CONTEXT_ACTION_SELECT = "select"
+
+# API Endpoint for retail init
+INIT_BASE_URL = "https://bap-ps-client-deg.becknprotocol.io/init"
+
+# Context action for init
+CONTEXT_ACTION_INIT = "init"
+
+# API Endpoint for retail confirm
+CONFIRM_BASE_URL = "https://bap-ps-client-deg.becknprotocol.io/confirm"
+
+# Context action for confirm
+CONTEXT_ACTION_CONFIRM = "confirm"
