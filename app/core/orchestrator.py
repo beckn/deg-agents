@@ -1,4 +1,6 @@
 from typing import Dict, Optional
+import requests
+import random
 from app.config.settings import settings, AppConfig, HandlerConfig
 from app.core.history_manager import chat_history_manager
 from app.core.query_router import QueryRouter
@@ -18,6 +20,7 @@ class ClientOrchestrator:
 
     def __init__(self, client_id: str, app_config: AppConfig):
         self.client_id = client_id
+        self.er_id = self._create_meter_and_er()
         self.app_config = app_config
         self.history_manager = chat_history_manager  # Use the shared history manager
 
@@ -97,6 +100,7 @@ class ClientOrchestrator:
                     f"Client '{self.client_id}': Query is a utility query, directly using '{handler_config_name}'"
                 )
             else:
+
                 error_msg = f"Utility handler '{utility_handler_key}' not configured for client '{self.client_id}'. Cannot process utility query."
                 print(f"Error: {error_msg}")
                 ai_response = "I'm sorry, I'm not configured to handle this utility request at the moment."
@@ -179,3 +183,134 @@ class ClientOrchestrator:
         """Clears all cached client orchestrator instances."""
         cls._instances.clear()
         print("Cleared all client orchestrator instances.")
+
+    def _create_meter_and_er(self):
+        """Creates a meter and er for the client."""
+        meter_id = None
+        retries = 5  # Max retries for creating a unique meter
+
+        for attempt in range(retries):
+            random_three_digit_number = random.randint(100, 999)
+            meter_code = f"METER{random_three_digit_number}"
+            meter_payload = {
+                "data": {
+                    "code": meter_code,
+                    "parent": None,
+                    "energyResource": None,
+                    "consumptionLoadFactor": 1.0,
+                    "productionLoadFactor": 0.0,
+                    "type": "SMART",
+                    "city": "San Francisco",
+                    "state": "California",
+                    "latitude": 37.7749,
+                    "longitude": -122.4194,
+                    "pincode": "94103",
+                }
+            }
+            meter_url = (
+                "https://playground.becknprotocol.io/meter-data-simulator/meters"
+            )
+            headers = {"Content-Type": "application/json"}
+
+            try:
+                print(
+                    f"Attempt {attempt + 1}: Creating meter with code {meter_code} for client {self.client_id}"
+                )
+                response = requests.post(
+                    meter_url, json=meter_payload, headers=headers, timeout=10
+                )
+                response.raise_for_status()  # Raise an exception for HTTP errors
+                response_data = response.json()
+
+                if response_data.get(
+                    "message"
+                ) == "Meter created successfully" and response_data.get("data"):
+                    meter_id = response_data["data"].get("id")
+                    if meter_id:
+                        print(
+                            f"Meter created successfully with ID: {meter_id} for client {self.client_id}"
+                        )
+                        break  # Exit loop if meter creation is successful
+                elif (
+                    response_data.get("error")
+                    and response_data["error"].get("message")
+                    == "This attribute must be unique"
+                ):
+                    print(
+                        f"Meter code {meter_code} already exists. Retrying... ({attempt + 1}/{retries})"
+                    )
+                    continue
+                else:
+                    print(f"Unexpected response during meter creation: {response_data}")
+                    # Potentially raise an error or handle differently
+
+            except requests.exceptions.RequestException as e:
+                print(f"Error creating meter for client {self.client_id}: {e}")
+                # Depending on the error, you might want to retry or raise
+                if attempt == retries - 1:  # If it's the last attempt
+                    raise Exception(
+                        f"Failed to create meter after {retries} attempts: {e}"
+                    )
+            except Exception as e:
+                print(f"An unexpected error occurred during meter creation: {e}")
+                if attempt == retries - 1:
+                    raise Exception(
+                        f"Failed to create meter after {retries} attempts due to an unexpected error: {e}"
+                    )
+
+        if not meter_id:
+            error_msg = f"Failed to create a unique meter for client {self.client_id} after {retries} attempts."
+            print(error_msg)
+            raise Exception(error_msg)
+
+        # Step 2: Create Energy Resource
+        er_name = f"Client_{self.client_id}_Resource_{random.randint(100,999)}"  # Adding some randomness to ER name as well
+        er_payload = {
+            "data": {
+                "name": er_name,
+                "type": "CONSUMER",
+                "meter": meter_id,
+            }
+        }
+        er_url = (
+            "https://playground.becknprotocol.io/meter-data-simulator/energy-resources"
+        )
+
+        try:
+            print(
+                f"Creating energy resource '{er_name}' linked to meter ID {meter_id} for client {self.client_id}"
+            )
+            response = requests.post(
+                er_url, json=er_payload, headers=headers, timeout=10
+            )
+            response.raise_for_status()
+            er_response_data = response.json()
+
+            if er_response_data.get(
+                "message"
+            ) == "Energy resource created successfully" and er_response_data.get(
+                "data"
+            ):
+                er_id = er_response_data["data"].get("id")
+                if er_id:
+                    print(
+                        f"Energy resource created successfully with ID: {er_id} for client {self.client_id}"
+                    )
+                    return er_id
+                else:
+                    raise Exception(
+                        f"Energy resource created but ID not found in response for client {self.client_id}: {er_response_data}"
+                    )
+            else:
+                raise Exception(
+                    f"Failed to create energy resource for client {self.client_id}. Response: {er_response_data}"
+                )
+
+        except requests.exceptions.RequestException as e:
+            print(f"Error creating energy resource for client {self.client_id}: {e}")
+            raise Exception(f"Failed to create energy resource: {e}")
+        except Exception as e:
+            print(f"An unexpected error occurred during energy resource creation: {e}")
+            raise Exception(
+                f"Failed to create energy resource due to an unexpected error: {e}"
+            )
