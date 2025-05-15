@@ -1,4 +1,4 @@
-from langchain.agents import AgentExecutor, create_openai_tools_agent
+from langchain.agents import AgentExecutor, create_tool_calling_agent
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
 from app.handlers.base_handler import BaseQueryHandler
@@ -32,7 +32,7 @@ class SolarQueryHandler(BaseQueryHandler):
 
         # This assumes self.llm is compatible with OpenAI tools agent (e.g., ChatOpenAI)
         try:
-            agent = create_openai_tools_agent(self.llm, self.tools, prompt_template)
+            agent = create_tool_calling_agent(self.llm, self.tools, prompt_template)
         except Exception as e:
             print(
                 f"Could not create OpenAI tools agent for SolarHandler (LLM: {self.llm_config.model_name}): {e}. Ensure the model supports tool calling."

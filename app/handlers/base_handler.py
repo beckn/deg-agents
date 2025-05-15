@@ -11,11 +11,8 @@ from app.config.settings import (
     get_api_key,
 )
 from app.core.history_manager import ChatHistoryManager, InMemoryChatHistory
-from langchain_openai import ChatOpenAI  # Example, make this dynamic later
-
-# Import other LLM providers as needed:
-# from langchain_anthropic import ChatAnthropic
-# from langchain_google_vertexai import ChatVertexAI
+from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 
 
 # Placeholder for dynamic LLM loading
@@ -33,6 +30,16 @@ def get_llm_instance(llm_config: LLMConfig) -> BaseChatModel:
             openai_api_key=api_key,
             # Add other OpenAI specific parameters from llm_config if any
             # e.g., max_tokens=llm_config.max_tokens
+        )
+    elif llm_config.provider in ["google", "gemini"]:
+        if not api_key:
+            raise ValueError(
+                f"API key for Google (env var: {llm_config.api_key_env or 'GOOGLE_API_KEY'}) not found."
+            )
+        return ChatGoogleGenerativeAI(
+            model=llm_config.model_name,
+            temperature=llm_config.temperature,
+            google_api_key=api_key,
         )
     # elif llm_config.provider == "anthropic":
     #     if not api_key:

@@ -57,7 +57,7 @@ class ToolConfig(BaseModel):
 
 class ChatHistoryConfig(BaseModel):
     provider: str
-    max_entries_per_client: Optional[int] = 100  # Example for in_memory
+    max_entries_per_client: Optional[int] = 25  # Example for in_memory
 
     # Allow extra fields
     class Config:
@@ -99,9 +99,11 @@ settings: AppConfig = load_config()
 def get_api_key(llm_config: LLMConfig) -> Optional[str]:
     if llm_config.api_key_env:
         return os.getenv(llm_config.api_key_env)
-    # Fallback for common keys if api_key_env is not specified (example)
+    # Fallback for common keys if api_key_env is not specified
     if llm_config.provider == "openai":
         return os.getenv("OPENAI_API_KEY")
+    elif llm_config.provider in ["google", "gemini"]:  # Updated for consistency
+        return os.getenv("GOOGLE_API_KEY")  # Standard env var for Google
     return None
 
 

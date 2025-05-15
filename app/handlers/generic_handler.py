@@ -1,7 +1,7 @@
 # app/handlers/generic_handler.py
 from langchain.agents import (
     AgentExecutor,
-    create_openai_tools_agent,
+    create_tool_calling_agent,
 )  # or other agent types
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
@@ -34,7 +34,7 @@ class GenericQueryHandler(BaseQueryHandler):
         # Adjust if using other LLM providers or agent types (e.g., ReAct, StructuredChatAgent)
         # This assumes self.llm is compatible (e.g., ChatOpenAI)
         try:
-            agent = create_openai_tools_agent(self.llm, self.tools, prompt_template)
+            agent = create_tool_calling_agent(self.llm, self.tools, prompt_template)
         except Exception as e:
             # Fallback or different agent type if create_openai_tools_agent is not suitable
             # For instance, if the LLM doesn't support OpenAI function calling.
