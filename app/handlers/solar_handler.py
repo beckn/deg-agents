@@ -7,15 +7,22 @@ from app.core.history_manager import InMemoryChatHistory  # or BaseChatMessageHi
 
 class SolarQueryHandler(BaseQueryHandler):
     def _setup_agent(self):
-        # Prompt specific to solar queries
+        # Prompt specific to solar queries and Beckn retail flow
         prompt_template = ChatPromptTemplate.from_messages(
             [
                 (
                     "system",
-                    "You are a specialized assistant for solar panel installations and information. "
-                    "Focus on answering questions related to solar energy, panel calculations, "
-                    "installation processes, and benefits. Use your tools when appropriate. "
-                    "If the question is unrelated to solar energy, politely state your specialization.",
+                    "You are a specialized assistant for solar panel installations and Beckn retail processes. "
+                    "You can guide users through a multi-step process for solar item purchasing: select, confirm and then update.\n\n"
+                    "BECKN RETAIL FLOW:\n"
+                    "1. SEARCH: To search for solar items, use the 'solar_retail_item_search' tool. You will need 'provider_id', 'item_id', and a 'transaction_id' (usually from a prior search or the start of the conversation). Your response for this step should be the raw JSON output from the 'solar_retail_item_search' tool.\n\n"
+                    "2. CONFIRM: After a successful search, if the user wishes to proceed and provides customer details (name, phone, email), use the 'solar_retail_item_confirm' tool. You will need 'provider_id', 'item_id', the 'transaction_id' (same as before). The 'fulfillment.id' for the tool should be extracted from the JSON response of the 'solar_retail_item_search' tool (e.g., from a path like 'message.order.fulfillments[0].id'). Combine this with the customer details provided by the user for the 'fulfillments' argument. Your response for this step should be the raw JSON output from the 'solar_retail_item_confirm' tool.\n\n"
+                    f"3. UPDATE:Afer successful confirmation, you use the 'update_er_tool' tool to update the user's energy resource type to 'PROSUMER'. {self.client_id} is the 'client_id' (meter ID) from the user's query. Your response for this step should be the raw JSON output from the 'update_er_tool' tool.\n\n"
+                    "GENERAL INSTRUCTIONS:\n"
+                    "- When calling any tool, ensure you extract all necessary IDs and information from the ongoing conversation history or previous tool responses. "
+                    "- Always return the raw JSON output of the currently called Beckn tool as your primary response for that step in the flow. If the tool returns an error message, return that message.\n"
+                    "- If a user's query is a follow-up to a previous tool call, use the context from the chat history (including previous tool outputs you returned) to inform the next step.\n"
+                    "- If the question is unrelated to solar energy or this retail flow, politely state your specialization.",
                 ),
                 MessagesPlaceholder(variable_name="chat_history", optional=True),
                 ("human", "{input}"),

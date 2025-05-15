@@ -34,8 +34,8 @@ handlers:
     class_path: "app.handlers.generic_handler.GenericQueryHandler" # Fully qualified path to handler class
     llm_config_name: "default_chat_model" # Uses the default general-purpose model
     tools:
-      common:
-        - "general_knowledge_tool" # Reusable tool for answering general questions
+      common: []
+        # - "general_knowledge_tool" # Reusable tool for answering general questions
       specific: [] # No domain-specific tools assigned
 
   solar_query_handler:
@@ -43,20 +43,25 @@ handlers:
     llm_config_name: "solar_query_model" # Uses the specialized model for solar queries
     tools:
       common:
-        - "general_knowledge_tool" # General utility tool
+        # - "general_knowledge_tool" # General utility tool
+        - "update_er_tool"
       specific:
         # - "solar_panel_calculator_tool" # Tool for performing solar calculations
     # memory_config can be added here if persistent memory is needed
         - "solar_retail_search"
-        - "solar_retail_select"
-        - "solar_retail_init"
+        # - "solar_retail_select"
+        # - "solar_retail_init"
         - "solar_retail_confirm"
 
 # Tool Configurations
 # Defines external utilities or capabilities that handlers can invoke
 tools:
-  general_knowledge_tool:
-    class_path: "app.tools.common_tools.general_knowledge.GeneralKnowledgeTool"
+  # general_knowledge_tool:
+  #   class_path: "app.tools.common_tools.general_knowledge.GeneralKnowledgeTool"
+    # Provides general factual knowledge, can optionally link to a retriever
+
+  update_er_tool:
+    class_path: "app.tools.common_tools.update_er.UpdateERTool"
     # Provides general factual knowledge, can optionally link to a retriever
 
   # solar_panel_calculator_tool:
