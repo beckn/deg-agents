@@ -15,6 +15,11 @@ llms:
     model_name: "gemini-2.5-flash-preview-04-17" # Specialized model for handling solar-related queries
     temperature: 0.5
 
+  dfp_query_model:
+    provider: "gemini"
+    model_name: "gemini-2.5-flash-preview-04-17" # Specialized model for handling DFP-related queries
+    temperature: 0.5
+
 query_router:
   llm_config_name: "routing_model"
   routes:
@@ -22,6 +27,8 @@ query_router:
       handler_config_name: "generic_query_handler"
     - route_key: "solar_installation"
       handler_config_name: "solar_query_handler"
+    - route_key: "dfp_plans"
+      handler_config_name: "dfp_query_handler"
 
 handlers:
   generic_query_handler:
@@ -40,9 +47,17 @@ handlers:
       specific:
         - "beckn_search"
         - "beckn_select"
-        # - "solar_retail_confirm"
+        - "beckn_confirm"
 
-# Tool Configurations
+  dfp_query_handler:
+    class_path: "app.handlers.dfp_handler.DFPQueryHandler"
+    llm_config_name: "default_chat_model"
+    tools:
+      common: []
+      specific: 
+        - "beckn_search"
+        - "beckn_confirm"
+
 tools:
   update_er_tool:
     class_path: "app.tools.common_tools.update_er.UpdateERTool"
@@ -53,11 +68,8 @@ tools:
   beckn_select:
     class_path: "app.tools.specific_tools.beckn_tools.select.BecknSelectTool"
 
+  beckn_confirm:
+    class_path: "app.tools.specific_tools.beckn_tools.confirm.BecknConfirmTool"
 
-  # solar_retail_confirm:
-  #   class_path: "app.tools.specific_tools.solar_tools.retail_confirm.SolarRetailConfirmTool"
-
-
-# Chat History Configuration
 chat_history:
   provider: "in_memory" #  extensible to support other providers
