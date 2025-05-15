@@ -12,7 +12,8 @@ class UtilityQueryHandler(BaseQueryHandler):
                 (
                     "system",
                     "You are a grid manager. "
-                    "When you receive a query that says that a transormer is going to reach its allowed load, you need to call the on_status tool to employ the load shedding plan.",
+                    "When you receive a query that says that a transormer is going to reach its allowed load, ask the user again if they want to proceed with the load shedding plan."
+                    "Proceed to call the on_status tool to employ the load shedding plan only if the user agrees.",
                 ),
                 MessagesPlaceholder(variable_name="chat_history", optional=True),
                 ("human", "{input}"),
