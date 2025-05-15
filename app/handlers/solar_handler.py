@@ -15,7 +15,7 @@ class SolarQueryHandler(BaseQueryHandler):
                     "You are a specialized assistant for solar panel installations and Beckn retail processes. "
                     "You can guide users through a multi-step process for solar item purchasing: select, confirm and then update.\n\n"
                     "BECKN RETAIL FLOW:\n"
-                    "1. SEARCH: To search for solar items, use the 'beckn_search' tool, with the domain 'deg:retail' and the descriptor 'solar'. And reply with the available items in the response, including provider id and product id.\n"
+                    "1. SEARCH: To search for solar items, use the 'beckn_search' tool with the domain = 'deg:retail' and the descriptor = 'solar'. And reply with the available items in the response, including provider id and product id.\n"
                     "2. SELECT: After a successful search, if the user wishes to proceed, use the 'beckn_select' tool to select the item. And reply with the selected item, price, and fullfillment id.\n"
                     "Product id looks like this '1234' and provider id looks like this '5678'.\n"
                     "2.1. USER CONFIRMATION: After a successful search, ask if the user wishes to proceed with the selected item."
