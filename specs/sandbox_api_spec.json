@@ -1,0 +1,554 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "DEG Sandbox Beckn  - Developer Documentation",
+    "version": "1.0.0",
+    "description": ""
+  },
+  "servers": [
+    {
+      "url": "{{base_url}}"
+    }
+  ],
+  "paths": {
+    "/search": {
+      "parameters": [],
+      "post": {
+        "summary": "Search",
+        "parameters": [],
+        "responses": {},
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "context": {
+                    "type": "object",
+                    "properties": {
+                      "domain": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "action": {
+                        "type": "string"
+                      },
+                      "location": {
+                        "type": "object",
+                        "properties": {
+                          "country": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "version": {
+                        "type": "string"
+                      },
+                      "bap_id": {
+                        "type": "string"
+                      },
+                      "bap_uri": {
+                        "type": "string"
+                      },
+                      "bpp_id": {
+                        "type": "string"
+                      },
+                      "bpp_uri": {
+                        "type": "string"
+                      },
+                      "transaction_id": {
+                        "type": "string"
+                      },
+                      "message_id": {
+                        "type": "string"
+                      },
+                      "timestamp": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "message": {
+                    "type": "object",
+                    "properties": {
+                      "intent": {
+                        "type": "object",
+                        "properties": {
+                          "item": {
+                            "type": "object",
+                            "properties": {
+                              "descriptor": {
+                                "type": "object",
+                                "properties": {
+                                  "name": {
+                                    "type": "string"
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/select": {
+      "parameters": [],
+      "post": {
+        "summary": "Select",
+        "parameters": [],
+        "responses": {},
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "context": {
+                    "type": "object",
+                    "properties": {
+                      "domain": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "action": {
+                        "type": "string"
+                      },
+                      "location": {
+                        "type": "object",
+                        "properties": {
+                          "country": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "city": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string",
+                                "format": "uri"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "version": {
+                        "type": "string"
+                      },
+                      "bap_id": {
+                        "type": "string"
+                      },
+                      "bap_uri": {
+                        "type": "string"
+                      },
+                      "bpp_id": {
+                        "type": "string"
+                      },
+                      "bpp_uri": {
+                        "type": "string"
+                      },
+                      "transaction_id": {
+                        "type": "string"
+                      },
+                      "message_id": {
+                        "type": "string"
+                      },
+                      "timestamp": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "message": {
+                    "type": "object",
+                    "properties": {
+                      "order": {
+                        "type": "object",
+                        "properties": {
+                          "provider": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "color"
+                              }
+                            }
+                          },
+                          "items": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "format": "color"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/init": {
+      "parameters": [],
+      "post": {
+        "summary": "Init",
+        "parameters": [],
+        "responses": {},
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "context": {
+                    "type": "object",
+                    "properties": {
+                      "domain": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "action": {
+                        "type": "string"
+                      },
+                      "location": {
+                        "type": "object",
+                        "properties": {
+                          "country": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "city": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string",
+                                "format": "uri"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "version": {
+                        "type": "string"
+                      },
+                      "bap_id": {
+                        "type": "string"
+                      },
+                      "bap_uri": {
+                        "type": "string"
+                      },
+                      "bpp_id": {
+                        "type": "string"
+                      },
+                      "bpp_uri": {
+                        "type": "string"
+                      },
+                      "transaction_id": {
+                        "type": "string"
+                      },
+                      "message_id": {
+                        "type": "string"
+                      },
+                      "timestamp": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "message": {
+                    "type": "object",
+                    "properties": {
+                      "order": {
+                        "type": "object",
+                        "properties": {
+                          "provider": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "color"
+                              }
+                            }
+                          },
+                          "items": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "format": "color"
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/confirm": {
+      "parameters": [],
+      "post": {
+        "summary": "Confirm",
+        "parameters": [],
+        "responses": {},
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "context": {
+                    "type": "object",
+                    "properties": {
+                      "domain": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "action": {
+                        "type": "string"
+                      },
+                      "location": {
+                        "type": "object",
+                        "properties": {
+                          "country": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "city": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string",
+                                "format": "uri"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "version": {
+                        "type": "string"
+                      },
+                      "bap_id": {
+                        "type": "string"
+                      },
+                      "bap_uri": {
+                        "type": "string"
+                      },
+                      "bpp_id": {
+                        "type": "string"
+                      },
+                      "bpp_uri": {
+                        "type": "string"
+                      },
+                      "transaction_id": {
+                        "type": "string"
+                      },
+                      "message_id": {
+                        "type": "string"
+                      },
+                      "timestamp": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "message": {
+                    "type": "object",
+                    "properties": {
+                      "order": {
+                        "type": "object",
+                        "properties": {
+                          "provider": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string",
+                                "format": "color"
+                              }
+                            }
+                          },
+                          "items": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "format": "color"
+                                }
+                              }
+                            }
+                          },
+                          "fulfillments": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "string",
+                                  "format": "color"
+                                },
+                                "customer": {
+                                  "type": "object",
+                                  "properties": {
+                                    "person": {
+                                      "type": "object",
+                                      "properties": {
+                                        "name": {
+                                          "type": "string"
+                                        }
+                                      }
+                                    },
+                                    "contact": {
+                                      "type": "object",
+                                      "properties": {
+                                        "phone": {
+                                          "type": "string",
+                                          "format": "utc-millisec"
+                                        },
+                                        "email": {
+                                          "type": "string",
+                                          "format": "email"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/status": {
+      "parameters": [],
+      "post": {
+        "summary": "Status",
+        "parameters": [],
+        "responses": {},
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "context": {
+                    "type": "object",
+                    "properties": {
+                      "domain": {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      "action": {
+                        "type": "string"
+                      },
+                      "location": {
+                        "type": "object",
+                        "properties": {
+                          "country": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string"
+                              }
+                            }
+                          },
+                          "city": {
+                            "type": "object",
+                            "properties": {
+                              "code": {
+                                "type": "string",
+                                "format": "uri"
+                              }
+                            }
+                          }
+                        }
+                      },
+                      "version": {
+                        "type": "string"
+                      },
+                      "bap_id": {
+                        "type": "string"
+                      },
+                      "bap_uri": {
+                        "type": "string"
+                      },
+                      "bpp_id": {
+                        "type": "string"
+                      },
+                      "bpp_uri": {
+                        "type": "string"
+                      },
+                      "transaction_id": {
+                        "type": "string"
+                      },
+                      "message_id": {
+                        "type": "string"
+                      },
+                      "timestamp": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "message": {
+                    "type": "object",
+                    "properties": {
+                      "order_id": {
+                        "type": "string",
+                        "format": "utc-millisec"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

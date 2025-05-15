@@ -1,0 +1,779 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "DEG World Engine - Developer Docs",
+    "version": "1.0.0",
+    "description": ""
+  },
+  "servers": [
+    {
+      "url": "{{BASE_URL}}"
+    }
+  ],
+  "paths": {
+    "/utility/detailed": {
+      "parameters": [],
+      "get": {
+        "summary": "Get Utilities,Substation,Transformer Data",
+        "parameters": [
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": false,
+            "example": "application/json",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "headers": {
+              "Server": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "nginx/1.24.0 (Ubuntu)"
+              },
+              "Date": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Tue, 13 May 2025 23:59:22 GMT"
+              },
+              "Content-Type": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "application/json; charset=utf-8"
+              },
+              "Content-Length": {
+                "schema": {
+                  "type": "integer"
+                },
+                "example": "373505"
+              },
+              "Connection": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "keep-alive"
+              },
+              "Content-Security-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "connect-src 'self' https:;img-src 'self' data: blob: https://market-assets.strapi.io;media-src 'self' data: blob:;default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';frame-ancestors 'self';object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline'"
+              },
+              "Referrer-Policy": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "no-referrer"
+              },
+              "Strict-Transport-Security": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "max-age=63072000"
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "nosniff"
+              },
+              "X-DNS-Prefetch-Control": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "off"
+              },
+              "X-Download-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "noopen"
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "SAMEORIGIN"
+              },
+              "X-Permitted-Cross-Domain-Policies": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "none"
+              },
+              "Vary": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Origin"
+              },
+              "Access-Control-Allow-Origin": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": ""
+              },
+              "Access-Control-Allow-Credentials": {
+                "schema": {
+                  "type": "boolean"
+                },
+                "example": "true"
+              },
+              "X-Powered-By": {
+                "schema": {
+                  "type": "string"
+                },
+                "example": "Strapi <strapi.io>"
+              }
+            },
+            "description": "New Request",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "utilities": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "integer"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "city": {
+                            "type": "string"
+                          },
+                          "state": {
+                            "type": "string"
+                          },
+                          "latitude": {
+                            "type": "string"
+                          },
+                          "longtitude": {
+                            "type": "string"
+                          },
+                          "pincode": {
+                            "type": "string",
+                            "format": "utc-millisec"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "publishedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "substations": {
+                            "type": "array",
+                            "items": {
+                              "type": "object",
+                              "properties": {
+                                "id": {
+                                  "type": "integer"
+                                },
+                                "name": {
+                                  "type": "string"
+                                },
+                                "city": {
+                                  "type": "string"
+                                },
+                                "state": {
+                                  "type": "string"
+                                },
+                                "latitude": {
+                                  "type": "string"
+                                },
+                                "longtitude": {
+                                  "type": "string"
+                                },
+                                "pincode": {
+                                  "type": "string",
+                                  "format": "utc-millisec"
+                                },
+                                "createdAt": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "updatedAt": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "publishedAt": {
+                                  "type": "string",
+                                  "format": "date-time"
+                                },
+                                "max_capacity_KW": {
+                                  "type": "integer"
+                                },
+                                "transformers": {
+                                  "type": "array",
+                                  "items": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "integer"
+                                      },
+                                      "name": {
+                                        "type": "string"
+                                      },
+                                      "city": {
+                                        "type": "string"
+                                      },
+                                      "state": {
+                                        "type": "string"
+                                      },
+                                      "latitude": {
+                                        "type": "string"
+                                      },
+                                      "longtitude": {
+                                        "type": "string"
+                                      },
+                                      "pincode": {
+                                        "type": "string",
+                                        "format": "utc-millisec"
+                                      },
+                                      "createdAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                      },
+                                      "updatedAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                      },
+                                      "publishedAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                      },
+                                      "max_capacity_KW": {
+                                        "type": "integer"
+                                      },
+                                      "meters": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "id": {
+                                              "type": "integer"
+                                            },
+                                            "code": {
+                                              "type": "string"
+                                            },
+                                            "consumptionLoadFactor": {
+                                              "type": "integer"
+                                            },
+                                            "productionLoadFactor": {
+                                              "type": "integer"
+                                            },
+                                            "type": {
+                                              "type": "string"
+                                            },
+                                            "city": {
+                                              "type": "string"
+                                            },
+                                            "state": {
+                                              "type": "string"
+                                            },
+                                            "latitude": {
+                                              "type": "number"
+                                            },
+                                            "longitude": {
+                                              "type": "number"
+                                            },
+                                            "pincode": {
+                                              "type": "string",
+                                              "format": "utc-millisec"
+                                            },
+                                            "createdAt": {
+                                              "type": "string",
+                                              "format": "date-time"
+                                            },
+                                            "updatedAt": {
+                                              "type": "string",
+                                              "format": "date-time"
+                                            },
+                                            "publishedAt": {
+                                              "type": "string",
+                                              "format": "date-time"
+                                            },
+                                            "max_capacity_KW": {
+                                              "type": "integer"
+                                            },
+                                            "energyResource": {
+                                              "type": "object",
+                                              "properties": {
+                                                "id": {
+                                                  "type": "integer"
+                                                },
+                                                "name": {
+                                                  "type": "string"
+                                                },
+                                                "type": {
+                                                  "type": "string"
+                                                },
+                                                "createdAt": {
+                                                  "type": "string",
+                                                  "format": "date-time"
+                                                },
+                                                "updatedAt": {
+                                                  "type": "string",
+                                                  "format": "date-time"
+                                                },
+                                                "publishedAt": {
+                                                  "type": "string",
+                                                  "format": "date-time"
+                                                },
+                                                "ders": {
+                                                  "type": "array",
+                                                  "items": {
+                                                    "type": "object",
+                                                    "properties": {
+                                                      "id": {
+                                                        "type": "integer"
+                                                      },
+                                                      "switched_on": {
+                                                        "type": "boolean"
+                                                      },
+                                                      "createdAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                      },
+                                                      "updatedAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                      },
+                                                      "publishedAt": {
+                                                        "type": "string",
+                                                        "format": "date-time"
+                                                      },
+                                                      "appliance": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                          "id": {
+                                                            "type": "integer"
+                                                          },
+                                                          "name": {
+                                                            "type": "string"
+                                                          },
+                                                          "powerRating": {
+                                                            "type": "integer"
+                                                          },
+                                                          "baseKWh": {
+                                                            "type": "number"
+                                                          },
+                                                          "description": {
+                                                            "type": "string"
+                                                          },
+                                                          "createdAt": {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                          },
+                                                          "updatedAt": {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                          },
+                                                          "publishedAt": {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                          }
+                                                        }
+                                                      }
+                                                    }
+                                                  }
+                                                }
+                                              }
+                                            }
+                                          }
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object"
+              }
+            }
+          }
+        }
+      }
+    },
+    "/utility/reset": {
+      "parameters": [],
+      "put": {
+        "summary": "Reset Data of World Engine",
+        "parameters": [
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": false,
+            "example": "application/json",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/grid-loads": {
+      "parameters": [],
+      "get": {
+        "summary": "Get Grid Loads",
+        "parameters": [
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": false,
+            "example": "application/json",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/meters": {
+      "parameters": [],
+      "post": {
+        "summary": "Meter",
+        "parameters": [
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": false,
+            "example": "application/json",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "code": {
+                        "type": "string"
+                      },
+                      "parent": {
+                        "nullable": true
+                      },
+                      "energyResource": {
+                        "nullable": true
+                      },
+                      "consumptionLoadFactor": {
+                        "type": "integer"
+                      },
+                      "productionLoadFactor": {
+                        "type": "integer"
+                      },
+                      "type": {
+                        "type": "string"
+                      },
+                      "city": {
+                        "type": "string"
+                      },
+                      "state": {
+                        "type": "string"
+                      },
+                      "latitude": {
+                        "type": "number"
+                      },
+                      "longitude": {
+                        "type": "number"
+                      },
+                      "pincode": {
+                        "type": "string",
+                        "format": "utc-millisec"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "summary": "Get All Meters",
+        "parameters": [
+          {
+            "name": "filters[code][$eq]",
+            "in": "query",
+            "required": false,
+            "example": "METER001",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "pagination[page]",
+            "in": "query",
+            "required": false,
+            "example": "1",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "pagination[pageSize]",
+            "in": "query",
+            "required": false,
+            "example": "100",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "filters[createdAt][$eq]",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "populate[0]",
+            "in": "query",
+            "required": false,
+            "example": "parent",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "populate[1]",
+            "in": "query",
+            "required": false,
+            "example": "energyResource",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "populate[2]",
+            "in": "query",
+            "required": false,
+            "example": "children",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "populate[3]",
+            "in": "query",
+            "required": false,
+            "example": "appliances",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sort[0]",
+            "in": "query",
+            "required": false,
+            "example": "children.code:desc",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/meters/5": {
+      "parameters": [],
+      "delete": {
+        "summary": "Delete Meter",
+        "parameters": [],
+        "responses": {}
+      }
+    },
+    "/meters/8": {
+      "parameters": [],
+      "get": {
+        "summary": "Get meter by id",
+        "parameters": [
+          {
+            "name": "populate[0]",
+            "in": "query",
+            "required": false,
+            "example": "parent",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "populate[1]",
+            "in": "query",
+            "required": false,
+            "example": "children",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {}
+      }
+    },
+    "/meter-datasets/1361": {
+      "parameters": [],
+      "get": {
+        "summary": "Meter Historical Data",
+        "parameters": [],
+        "responses": {}
+      }
+    },
+    "/energy-resources": {
+      "parameters": [],
+      "post": {
+        "summary": "Energy-Resource",
+        "parameters": [
+          {
+            "name": "Content-Type",
+            "in": "header",
+            "required": false,
+            "example": "application/json",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {},
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "data": {
+                    "type": "object",
+                    "properties": {
+                      "name": {
+                        "type": "string"
+                      },
+                      "type": {
+                        "type": "string"
+                      },
+                      "meter": {
+                        "type": "integer"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/energy-resources/1326": {
+      "parameters": [],
+      "get": {
+        "summary": "Energy-Resource Get By Id",
+        "parameters": [
+          {
+            "name": "populate[0]",
+            "in": "query",
+            "required": false,
+            "example": "meter.parent",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "populate[1]",
+            "in": "query",
+            "required": false,
+            "example": "meter.children",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "populate[2]",
+            "in": "query",
+            "required": false,
+            "example": "meter.appliances",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {}
+      },
+      "delete": {
+        "summary": "Energy-Resource",
+        "parameters": [],
+        "responses": {}
+      }
+    },
+    "/der": {
+      "parameters": [],
+      "post": {
+        "summary": "Create DER",
+        "parameters": [],
+        "responses": {},
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "energy_resource": {
+                    "type": "integer"
+                  },
+                  "appliance": {
+                    "type": "integer"
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/toggle-der/1781": {
+      "parameters": [],
+      "post": {
+        "summary": "Toggle DER Switching",
+        "parameters": [],
+        "responses": {}
+      }
+    }
+  }
+}

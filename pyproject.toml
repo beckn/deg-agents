@@ -1,0 +1,18 @@
+[project]
+name = "deg-agents"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.115.12",
+    "google-genai>=1.15.0",
+    "pydantic>=2.11.4",
+    "python-dotenv>=1.1.0",
+    "uvicorn>=0.34.2",
+]
+
+[dependency-groups]
+dev = [
+    "commitizen>=4.7.0",
+]
