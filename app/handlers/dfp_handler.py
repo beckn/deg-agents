@@ -65,7 +65,7 @@ class DFPQueryHandler(BaseQueryHandler):
             return
 
         self.agent_executor = AgentExecutor(
-            agent=agent, tools=self.tools, verbose=True, handle_parsing_errors=True
+            agent=agent, tools=self.tools, verbose=False, handle_parsing_errors=True
         )
 
     async def handle_query(self, query: str, chat_history: InMemoryChatHistory) -> str:

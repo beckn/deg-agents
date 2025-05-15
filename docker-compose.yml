@@ -1,0 +1,20 @@
+services:
+  app:
+    build:
+      context: . # Use the current directory as the build context
+      dockerfile: Dockerfile # Specify the Dockerfile to use
+    ports:
+      - "8000:8000" # Map port 8000 on the host to port 8000 in the container
+    volumes:
+      # Mount the ./app directory on the host to /app/app in the container.
+      # This is useful for development as code changes will be reflected
+      # immediately if your application server supports hot-reloading (uvicorn with reload=True does).
+      - ./:/app
+    # If you use a .env file for environment variables, uncomment the following lines.
+    # Create a .env file in the root of your project (next to this docker-compose.yml file).
+    # Example .env:
+    # MY_VARIABLE=my_value
+    # ANOTHER_VARIABLE=another_value
+    env_file:
+      - .env
+    container_name: deg_agents_app # Optional: A friendly name for your container

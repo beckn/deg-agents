@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 from app.models.chat import ChatRequest, ChatResponse
-from app.core.orchestrator import ClientOrchestrator  # Import the orchestrator
+from app.core.orchestrator import ClientOrchestrator
 from app.core.history_manager import chat_history_manager
 
 router = APIRouter(prefix="/chat", tags=["chat"])
