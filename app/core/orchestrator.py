@@ -72,43 +72,73 @@ class ClientOrchestrator:
             print(f"Error instantiating handler '{handler_config_name}': {e}")
             raise
 
-    async def process_query(self, query: str) -> str:
+    async def process_query(self, query: str, is_utility: bool = False) -> str:
         """
         Main method to process a user's query.
         1. Adds user query to history.
-        2. Routes the query.
-        3. Gets/Initializes the appropriate handler.
-        4. Handler processes the query.
-        5. Adds AI response to history.
-        6. Returns AI response.
+        2. If is_utility is True, directly select UtilityHandler.
+        3. Else, routes the query.
+        4. Gets/Initializes the appropriate handler.
+        5. Handler processes the query.
+        6. Adds AI response to history.
+        7. Returns AI response.
         """
         # 1. Add user query to history
         self.history_manager.add_user_message(self.client_id, query)
         current_chat_history = self.history_manager.get_history(self.client_id)
 
-        # 2. Route the query
-        # Pass history to router if it's configured to use it
-        route_key = await self.query_router.route_query(query, current_chat_history)
-        print(f"Client '{self.client_id}': Query routed to '{route_key}'")
-
-        # Find the handler config name associated with this route_key
         handler_config_name: Optional[str] = None
-        for route_cfg in self.app_config.query_router.routes:
-            if route_cfg.route_key == route_key:
-                handler_config_name = route_cfg.handler_config_name
-                break
 
-        if not handler_config_name:
-            print(
-                f"Warning: No handler configured for route_key '{route_key}'. Defaulting to find a generic handler."
-            )
-            # Try to find a handler named 'generic_query_handler' or the first available one as a fallback
-            if "generic_query_handler" in self.app_config.handlers:
-                handler_config_name = "generic_query_handler"
-            elif self.app_config.handlers:
-                handler_config_name = list(self.app_config.handlers.keys())[0]
+        if is_utility:
+            utility_handler_key = "utility_query_handler"
+            if utility_handler_key in self.app_config.handlers:
+                handler_config_name = utility_handler_key
+                print(
+                    f"Client '{self.client_id}': Query is a utility query, directly using '{handler_config_name}'"
+                )
             else:
-                return "I'm sorry, but I'm not configured to handle this type of query, and no default handler is available."
+                error_msg = f"Utility handler '{utility_handler_key}' not configured for client '{self.client_id}'. Cannot process utility query."
+                print(f"Error: {error_msg}")
+                ai_response = "I'm sorry, I'm not configured to handle this utility request at the moment."
+                self.history_manager.add_ai_message(self.client_id, ai_response)
+                return ai_response
+        else:
+            # 2. Route the query (original logic if not a utility query)
+            # Pass history to router if it's configured to use it
+            route_key = await self.query_router.route_query(query, current_chat_history)
+            print(f"Client '{self.client_id}': Query routed to '{route_key}'")
+
+            # Find the handler config name associated with this route_key
+            for route_cfg in self.app_config.query_router.routes:
+                if route_cfg.route_key == route_key:
+                    handler_config_name = route_cfg.handler_config_name
+                    break
+
+            if not handler_config_name:
+                print(
+                    f"Warning: No handler configured for route_key '{route_key}'. Defaulting to find a generic handler."
+                )
+                # Try to find a handler named 'generic_query_handler' or the first available one as a fallback
+                if "generic_query_handler" in self.app_config.handlers:
+                    handler_config_name = "generic_query_handler"
+                elif self.app_config.handlers:
+                    handler_config_name = list(self.app_config.handlers.keys())[0]
+                else:
+                    # No handlers configured at all
+                    ai_response = "I'm sorry, but I'm not configured to handle any queries at the moment, and no default handler is available."
+                    self.history_manager.add_ai_message(self.client_id, ai_response)
+                    return ai_response
+
+        # Ensure handler_config_name is set if we reach here (either by utility or routing)
+        if not handler_config_name:
+            # This case should ideally be caught by the logic above,
+            # but as a safeguard:
+            print(
+                f"Internal Error: Could not determine handler for client '{self.client_id}' for query: {query}"
+            )
+            ai_response = "I'm sorry, an internal error occurred, and I could not determine how to handle your request."
+            self.history_manager.add_ai_message(self.client_id, ai_response)
+            return ai_response
 
         # 3. Get/Initialize the appropriate handler
         try:
@@ -117,7 +147,9 @@ class ClientOrchestrator:
             print(
                 f"Error obtaining handler '{handler_config_name}' for client '{self.client_id}': {e}"
             )
-            return f"I'm sorry, there was an issue setting up the appropriate assistant for your query: {e}"
+            ai_response = f"I'm sorry, there was an issue setting up the appropriate assistant for your query: {e}"
+            self.history_manager.add_ai_message(self.client_id, ai_response)
+            return ai_response
 
         # 4. Handler processes the query
         try:
@@ -127,6 +159,7 @@ class ClientOrchestrator:
                 f"Error during query handling by '{handler_config_name}' for client '{self.client_id}': {e}"
             )
             ai_response = f"I encountered an error trying to process your request with the {handler_config_name.replace('_', ' ')}. Please try again."
+            self.history_manager.add_ai_message(self.client_id, ai_response)
 
         # 5. Add AI response to history
         self.history_manager.add_ai_message(self.client_id, ai_response)

@@ -20,7 +20,7 @@ async def chat(request: ChatRequest):
         orchestrator = ClientOrchestrator.get_instance(request.client_id)
 
         # Process the query
-        ai_message = await orchestrator.process_query(request.query)
+        ai_message = await orchestrator.process_query(request.query, request.is_utility)
 
         return ChatResponse(
             status="success",

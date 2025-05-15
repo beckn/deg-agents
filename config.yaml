@@ -58,6 +58,14 @@ handlers:
         - "beckn_search"
         - "beckn_confirm"
 
+  utility_query_handler:
+    class_path: "app.handlers.utility_handler.UtilityQueryHandler"
+    llm_config_name: "default_chat_model"
+    tools:
+      common: []
+      specific: 
+        - "on_status"
+
 tools:
   update_er_tool:
     class_path: "app.tools.common_tools.update_er.UpdateERTool"
@@ -70,6 +78,9 @@ tools:
 
   beckn_confirm:
     class_path: "app.tools.specific_tools.beckn_tools.confirm.BecknConfirmTool"
+
+  on_status:
+    class_path: "app.tools.specific_tools.utility_tools.on_status.OnStatusTool"
 
 chat_history:
   provider: "in_memory" #  extensible to support other providers
