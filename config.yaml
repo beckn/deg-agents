@@ -39,6 +39,7 @@ handlers:
         - "update_er_tool"
       specific:
         - "beckn_search"
+        - "beckn_select"
         # - "solar_retail_confirm"
 
 # Tool Configurations
@@ -48,6 +49,9 @@ tools:
 
   beckn_search:
     class_path: "app.tools.specific_tools.beckn_tools.search.BecknSearchTool"
+
+  beckn_select:
+    class_path: "app.tools.specific_tools.beckn_tools.select.BecknSelectTool"
 
 
   # solar_retail_confirm:

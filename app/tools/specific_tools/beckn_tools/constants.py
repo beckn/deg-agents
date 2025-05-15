@@ -1,5 +1,8 @@
-CONTEXT_DOMAINS_TO_DESCRIPTOR_MAPPING = {"deg:retail":["solar"], "deg:schemes":["Program"]}
-CONTEXT_ACTIONS = ["search", "confirm"]
+CONTEXT_DOMAINS_TO_DESCRIPTOR_MAPPING = {
+    "deg:retail": ["solar"],
+    "deg:schemes": ["Program"],
+}
+CONTEXT_ACTIONS = ["search", "select", "confirm"]
 
 BASE_URL = "https://bap-ps-client-deg.becknprotocol.io/"
 
