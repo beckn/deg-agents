@@ -1,105 +1,59 @@
 # LLM Configurations
-# Defines large language model (LLM) settings to be used by various components
 llms:
   default_chat_model:
     provider: "gemini" # LLM provider (e.g., OpenAI, Azure, Anthropic, Google)
     model_name: "gemini-2.5-flash-preview-04-17" # Primary model for general user interactions
-    temperature: 0.7 # Controls randomness; higher values = more creative output
+    temperature: 0.7
 
   routing_model:
     provider: "gemini"
     model_name: "gemini-2.5-flash-preview-04-17" # Lightweight model for routing incoming queries
-    temperature: 0.0 # Deterministic output preferred for consistent routing decisions
+    temperature: 0.0
 
   solar_query_model:
     provider: "gemini"
     model_name: "gemini-2.5-flash-preview-04-17" # Specialized model for handling solar-related queries
-    temperature: 0.5 # Balanced creativity and reliability for task-specific answers
+    temperature: 0.5
 
-# Query Router Configuration
-# Determines how incoming queries are routed to the appropriate handler
 query_router:
-  llm_config_name: "routing_model" # Uses the routing model defined above
-  routes: # Maps router outputs to specific handler configurations
+  llm_config_name: "routing_model"
+  routes:
     - route_key: "generic"
       handler_config_name: "generic_query_handler"
     - route_key: "solar_installation"
       handler_config_name: "solar_query_handler"
-    # Additional routes can be added here for other query types
 
-# Handler Configurations
-# Defines the logic and tools used to process specific query types
 handlers:
   generic_query_handler:
-    class_path: "app.handlers.generic_handler.GenericQueryHandler" # Fully qualified path to handler class
-    llm_config_name: "default_chat_model" # Uses the default general-purpose model
+    class_path: "app.handlers.generic_handler.GenericQueryHandler"
+    llm_config_name: "default_chat_model"
     tools:
       common: []
-        # - "general_knowledge_tool" # Reusable tool for answering general questions
-      specific: [] # No domain-specific tools assigned
+      specific: []
 
   solar_query_handler:
     class_path: "app.handlers.solar_handler.SolarQueryHandler"
-    llm_config_name: "solar_query_model" # Uses the specialized model for solar queries
+    llm_config_name: "solar_query_model"
     tools:
       common:
-        # - "general_knowledge_tool" # General utility tool
         - "update_er_tool"
       specific:
-        # - "solar_panel_calculator_tool" # Tool for performing solar calculations
-    # memory_config can be added here if persistent memory is needed
-        - "solar_retail_search"
-        # - "solar_retail_select"
-        # - "solar_retail_init"
-        - "solar_retail_confirm"
+        - "beckn_search"
+        # - "solar_retail_confirm"
 
 # Tool Configurations
-# Defines external utilities or capabilities that handlers can invoke
 tools:
-  # general_knowledge_tool:
-  #   class_path: "app.tools.common_tools.general_knowledge.GeneralKnowledgeTool"
-    # Provides general factual knowledge, can optionally link to a retriever
-
   update_er_tool:
     class_path: "app.tools.common_tools.update_er.UpdateERTool"
-    # Provides general factual knowledge, can optionally link to a retriever
 
-  # solar_panel_calculator_tool:
-  #   class_path: "app.tools.specific_tools.solar_tools.panel_calculator.SolarPanelCalculatorTool"
-  #   # Performs calculations related to solar panel output and financial savings
+  beckn_search:
+    class_path: "app.tools.specific_tools.beckn_tools.search.BecknSearchTool"
 
-  solar_retail_search:
-    class_path: "app.tools.specific_tools.solar_tools.retail_search.SolarRetailSearchTool"
-    # Searches for solar retailers in a specific area
 
-  solar_retail_select:
-    class_path: "app.tools.specific_tools.solar_tools.retail_select.SolarRetailSelectTool"
-  #   # Selects a solar retailer from a list of options
-
-  solar_retail_init:
-    class_path: "app.tools.specific_tools.solar_tools.retail_init.SolarRetailInitTool"
-  #   # Initializes the solar retail process
-
-  solar_retail_confirm:
-    class_path: "app.tools.specific_tools.solar_tools.retail_confirm.SolarRetailConfirmTool"
-    # Confirms the solar retail process
+  # solar_retail_confirm:
+  #   class_path: "app.tools.specific_tools.solar_tools.retail_confirm.SolarRetailConfirmTool"
 
 
 # Chat History Configuration
-# Controls how and where chat histories are stored
 chat_history:
-  provider: "in_memory" # Options: in_memory, redis, database, file, etc.
-  # In-memory storage is ephemeral and resets on application restart
-  # provider_specific_config can be added to tune storage behavior
-
-# Knowledge Base Stubs Configuration (Optional, for future expansion)
-# Prepares the system for integration with knowledge bases
-# knowledge_bases:
-#   company_faq_kb:
-#     type: "vector_store" # Uses vector similarity for document retrieval
-#     vector_db_provider: "chroma" # Backend vector DB (chroma, faiss, pinecone, etc.)
-#     embedding_model_config_name: "default_embedding_model" # Embedding model reference
-#     # connection_args: ... # Connection parameters for the DB
-#   product_docs_kb:
-#     type: "document_retriever" # Simpler keyword/document based retriever
-#     # Additional config can go here
+  provider: "in_memory" #  extensible to support other providers
