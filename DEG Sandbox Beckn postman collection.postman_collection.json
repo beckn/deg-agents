@@ -1,0 +1,630 @@
+{
+	"info": {
+		"_postman_id": "8e9f4c39-f491-4b81-b897-4273d83f73cf",
+		"name": "DEG Sandbox Beckn postman collection",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "4049356"
+	},
+	"item": [
+		{
+			"name": "Connection",
+			"item": [
+				{
+					"name": "Search",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"context\": {\n        \"domain\": \"deg:service\",\n        \"action\": \"search\",\n        \"location\": {\n            \"country\": {\n                \"code\": \"USA\"\n            }\n        },\n        \"version\": \"1.1.0\",\n        \"bap_id\": \"{{bap_id}}\",\n        \"bap_uri\": \"{{bap_uri}}\",\n        \"bpp_id\": \"{{bpp_id}}\",\n        \"bpp_uri\": \"{{bpp_uri}}\",\n        \"transaction_id\": \"{{$randomUUID}}\",\n        \"message_id\": \"{{$randomUUID}}\",\n        \"timestamp\": \"{{$timestamp}}\"\n    },\n    \"message\": {\n        \"intent\": {\n            \"item\": {\n                \"descriptor\": {\n                    \"name\": \"Connection\"\n                }\n            }\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/search",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Select",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"context\": {\n        \"domain\": \"deg:service\",\n        \"action\": \"select\",\n        \"location\": {\n            \"country\": {\n                \"code\": \"USA\"\n            },\n            \"city\": {\n                \"code\": \"NANP:628\"\n            }\n        },\n        \"version\": \"1.1.0\",\n        \"bap_id\": \"{{bap_id}}\",\n        \"bap_uri\": \"{{bap_uri}}\",\n        \"bpp_id\": \"{{bpp_id}}\",\n        \"bpp_uri\": \"{{bpp_uri}}\",\n        \"transaction_id\": \"{{$randomUUID}}\",\n        \"message_id\": \"{{$randomUUID}}\",\n        \"timestamp\": \"{{$timestamp}}\"\n    },\n    \"message\": {\n        \"order\": {\n            \"provider\": {\n                \"id\": \"334\"\n            },\n            \"items\": [\n                {\n                    \"id\": \"471\"\n                }\n            ]\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/select",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"select"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Init",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"context\": {\n        \"domain\": \"deg:service\",\n        \"action\": \"init\",\n        \"location\": {\n            \"country\": {\n                \"code\": \"USA\"\n            },\n            \"city\": {\n                \"code\": \"NANP:628\"\n            }\n        },\n        \"version\": \"1.1.0\",\n        \"bap_id\": \"{{bap_id}}\",\n        \"bap_uri\": \"{{bap_uri}}\",\n        \"bpp_id\": \"{{bpp_id}}\",\n        \"bpp_uri\": \"{{bpp_uri}}\",\n        \"transaction_id\": \"{{$randomUUID}}\",\n        \"message_id\": \"{{$randomUUID}}\",\n        \"timestamp\": \"{{$timestamp}}\"\n    },\n    \"message\": {\n        \"order\": {\n            \"provider\": {\n                \"id\": \"334\"\n            },\n            \"items\": [\n                {\n                    \"id\": \"471\"\n                }\n            ]\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/init",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"init"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Confirm",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"context\": {\n        \"domain\": \"deg:service\",\n        \"action\": \"confirm\",\n        \"location\": {\n            \"country\": {\n                \"code\": \"USA\"\n            },\n            \"city\": {\n                \"code\": \"NANP:628\"\n            }\n        },\n        \"version\": \"1.1.0\",\n        \"bap_id\": \"{{bap_id}}\",\n        \"bap_uri\": \"{{bap_uri}}\",\n        \"bpp_id\": \"{{bpp_id}}\",\n        \"bpp_uri\": \"{{bpp_uri}}\",\n        \"transaction_id\": \"{{$randomUUID}}\",\n        \"message_id\": \"{{$randomUUID}}\",\n        \"timestamp\": \"{{$timestamp}}\"\n    },\n    \"message\": {\n        \"order\": {\n            \"provider\": {\n                \"id\": \"334\"\n            },\n            \"items\": [\n                {\n                    \"id\": \"471\"\n                }\n            ],\n            \"fulfillments\": [\n                {\n                    \"id\": \"615\",\n                    \"customer\": {\n                        \"person\": {\n                            \"name\": \"Lisa\"\n                        },\n                        \"contact\": {\n                            \"phone\": \"876756454\",\n                            \"email\": \"LisaS@mailinator.com\"\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/confirm",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"confirm"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Status",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"context\": {\n        \"domain\": \"deg:service\",\n        \"action\": \"status\",\n        \"location\": {\n            \"country\": {\n                \"code\": \"USA\"\n            },\n            \"city\": {\n                \"code\": \"NANP:628\"\n            }\n        },\n        \"version\": \"1.1.0\",\n        \"bap_id\": \"{{bap_id}}\",\n        \"bap_uri\": \"{{bap_uri}}\",\n        \"bpp_id\": \"{{bpp_id}}\",\n        \"bpp_uri\": \"{{bpp_uri}}\",\n        \"transaction_id\": \"{{$randomUUID}}\",\n        \"message_id\": \"{{$randomUUID}}\",\n        \"timestamp\": \"{{$timestamp}}\"\n    },\n    \"message\": {\n        \"order_id\": \"3779\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"status"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Subsidy",
+			"item": [
+				{
+					"name": "Confirm",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"context\": {\n    \"domain\": \"deg:schemes\",\n    \"action\": \"confirm\",\n    \"location\": {\n      \"country\": {\n        \"code\": \"USA\"\n      },\n      \"city\": {\n        \"code\": \"NANP:628\"\n      }\n    },\n    \"version\": \"1.1.0\",\n    \"bap_id\": \"{{bap_id}}\",\n    \"bap_uri\": \"{{bap_uri}}\",\n            \"bpp_id\": \"{{bpp_id}}\",\n    \"bpp_uri\": \"{{bpp_uri}}\",\n    \"transaction_id\": \"{{$randomUUID}}\",\n    \"message_id\": \"{{$randomUUID}}\",\n    \"timestamp\": \"{{$timestamp}}\"\n  },\n  \"message\": {\n   \"order\": {\n            \"provider\": {\n                \"id\": \"323\"\n            },\n            \"items\": [\n                {\n                    \"id\": \"459\"\n                  \n                }\n            ],\n                         \"fulfillments\": [\n        {\n          \"id\": \"615\",\n          \"customer\": {\n            \"person\": {\n              \"name\": \"Lisa\"\n            },\n            \"contact\": {\n              \"phone\": \"876756454\",\n              \"email\": \"LisaS@mailinator.com\"\n            }\n          }\n        }\n      ]\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/confirm",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"confirm"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Search",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"context\": {\n        \"domain\": \"deg:schemes\",\n        \"action\": \"search\",\n        \"location\": {\n            \"country\": {\n                \"code\": \"USA\"\n            },\n            \"city\": {\n                \"code\": \"NANP:628\"\n            }\n        },\n        \"version\": \"1.1.0\",\n        \"bap_id\": \"{{bap_id}}\",\n        \"bap_uri\": \"{{bap_uri}}\",\n        \"bpp_id\": \"{{bpp_id}}\",\n        \"bpp_uri\": \"{{bpp_uri}}\",\n        \"transaction_id\": \"{{$randomUUID}}\",\n\n        \"timestamp\": \"{{$timestamp}}\"\n    },\n    \"message\": {\n        \"intent\": {\n            \"item\": {\n                \"descriptor\": {\n                    \"name\": \"incentive\"\n                }\n            }\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/search",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Status",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"context\": {\n    \"domain\": \"deg:service\",\n    \"action\": \"status\",\n    \"location\": {\n      \"country\": {\n        \"code\": \"USA\"\n      },\n      \"city\": {\n        \"code\": \"NANP:628\"\n      }\n    },\n    \"version\": \"1.1.0\",\n    \"bap_id\": \"{{bap_id}}\",\n    \"bap_uri\": \"{{bap_uri}}\",\n            \"bpp_id\": \"{{bpp_id}}\",\n    \"bpp_uri\": \"{{bpp_uri}}\",\n    \"transaction_id\": \"{{$randomUUID}}\",\n    \"message_id\": \"{{$randomUUID}}\",\n    \"timestamp\": \"{{$timestamp}}\"\n  },\n  \"message\": {\n\"order_id\": \"3778\"\n\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"status"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "DFP",
+			"item": [
+				{
+					"name": "Search",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"context\": {\n        \"domain\": \"deg:schemes\",\n        \"action\": \"search\",\n        \"location\": {\n            \"country\": {\n                \"code\": \"USA\"\n            },\n            \"city\": {\n                \"code\": \"NANP:628\"\n            }\n        },\n        \"version\": \"1.1.0\",\n        \"bap_id\": \"{{bap_id}}\",\n        \"bap_uri\": \"{{bap_uri}}\",\n        \"bpp_id\": \"{{bpp_id}}\",\n        \"bpp_uri\": \"{{bpp_uri}}\",\n        \"transaction_id\": \"{{$randomUUID}}\",\n        \"message_id\": \"{{$randomUUID}}\",\n        \"timestamp\": \"{{$timestamp}}\"\n    },\n    \"message\": {\n        \"intent\": {\n            \"item\": {\n                \"descriptor\": {\n                    \"name\": \"Program\"\n                }\n            }\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/search",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Confirm",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"context\": {\n    \"domain\": \"deg:schemes\",\n    \"action\": \"confirm\",\n    \"location\": {\n      \"country\": {\n        \"code\": \"USA\"\n      },\n      \"city\": {\n        \"code\": \"NANP:628\"\n      }\n    },\n    \"version\": \"1.1.0\",\n    \"bap_id\": \"{{bap_id}}\",\n    \"bap_uri\": \"{{bap_uri}}\",\n            \"bpp_id\": \"{{bpp_id}}\",\n    \"bpp_uri\": \"{{bpp_uri}}\",\n    \"transaction_id\": \"{{$randomUUID}}\",\n    \"message_id\": \"{{$randomUUID}}\",\n    \"timestamp\": \"{{$timestamp}}\"\n  },\n  \"message\": {\n   \"order\": {\n            \"provider\": {\n                \"id\": \"323\"\n            },\n            \"items\": [\n                {\n                    \"id\": \"458\"\n                  \n                }\n            ],\n                     \"fulfillments\": [\n        {\n          \"id\": \"616\",\n          \"customer\": {\n            \"person\": {\n              \"name\": \"Lisa\"\n            },\n            \"contact\": {\n              \"phone\": \"876756454\",\n              \"email\": \"LisaS@mailinator.com\"\n            }\n          }\n        }\n      ]\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/confirm",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"confirm"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Status",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"context\": {\n    \"domain\": \"deg:schemes\",\n    \"action\": \"status\",\n    \"location\": {\n      \"country\": {\n        \"code\": \"USA\"\n      },\n      \"city\": {\n        \"code\": \"NANP:628\"\n      }\n    },\n    \"version\": \"1.1.0\",\n    \"bap_id\": \"{{bap_id}}\",\n    \"bap_uri\": \"{{bap_uri}}\",\n            \"bpp_id\": \"{{bpp_id}}\",\n    \"bpp_uri\": \"{{bpp_uri}}\",\n    \"transaction_id\": \"{{$randomUUID}}\",\n    \"message_id\": \"{{$randomUUID}}\",\n    \"timestamp\": \"{{$timestamp}}\"\n  },\n  \"message\": {\n\"order_id\": \"3776\"\n\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"status"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Solar-Retail",
+			"item": [
+				{
+					"name": "Search",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"context\": {\n        \"domain\": \"deg:retail\",\n        \"action\": \"search\",\n        \"location\": {\n            \"country\": {\n                \"code\": \"USA\"\n            },\n            \"city\": {\n                \"code\": \"NANP:628\"\n            }\n        },\n        \"version\": \"1.1.0\",\n        \"bap_id\": \"{{bap_id}}\",\n        \"bap_uri\": \"{{bap_uri}}\",\n        \"bpp_id\": \"{{bpp_id}}\",\n        \"bpp_uri\": \"{{bpp_uri}}\",\n        \"transaction_id\": \"{{$randomUUID}}\",\n        \"message_id\": \"{{$randomUUID}}\",\n        \"timestamp\": \"{{$timestamp}}\"\n    },\n    \"message\": {\n        \"intent\": {\n            \"item\": {\n                \"descriptor\": {\n                    \"name\": \"solar\"\n                }\n            }\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/search",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Select",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"context\": {\n    \"domain\": \"deg:retail\",\n    \"action\": \"select\",\n    \"location\": {\n      \"country\": {\n        \"code\": \"USA\"\n      },\n      \"city\": {\n        \"code\": \"NANP:628\"\n      }\n    },\n    \"version\": \"1.1.0\",\n    \"bap_id\": \"{{bap_id}}\",\n    \"bap_uri\": \"{{bap_uri}}\",\n            \"bpp_id\": \"{{bpp_id}}\",\n    \"bpp_uri\": \"{{bpp_uri}}\",\n    \"transaction_id\": \"{{$randomUUID}}\",\n    \"message_id\": \"{{$randomUUID}}\",\n    \"timestamp\": \"{{$timestamp}}\"\n  },\n  \"message\": {\n   \"order\": {\n            \"provider\": {\n                \"id\": \"104\"\n            },\n            \"items\": [\n                {\n                    \"id\": \"283\"\n                }\n            ]\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/select",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"select"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Init",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"context\": {\n    \"domain\": \"deg:retail\",\n    \"action\": \"init\",\n    \"location\": {\n      \"country\": {\n        \"code\": \"USA\"\n      },\n      \"city\": {\n        \"code\": \"NANP:628\"\n      }\n    },\n    \"version\": \"1.1.0\",\n    \"bap_id\": \"{{bap_id}}\",\n    \"bap_uri\": \"{{bap_uri}}\",\n            \"bpp_id\": \"{{bpp_id}}\",\n    \"bpp_uri\": \"{{bpp_uri}}\",\n    \"transaction_id\": \"{{$randomUUID}}\",\n    \"message_id\": \"{{$randomUUID}}\",\n    \"timestamp\": \"{{$timestamp}}\"\n  },\n  \"message\": {\n   \"order\": {\n            \"provider\": {\n                \"id\": \"104\"\n            },\n            \"items\": [\n                {\n                    \"id\": \"283\"\n                }\n            ]\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/init",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"init"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Confirm",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"context\": {\n    \"domain\": \"deg:retail\",\n    \"action\": \"confirm\",\n    \"location\": {\n      \"country\": {\n        \"code\": \"USA\"\n      },\n      \"city\": {\n        \"code\": \"NANP:628\"\n      }\n    },\n    \"version\": \"1.1.0\",\n    \"bap_id\": \"{{bap_id}}\",\n    \"bap_uri\": \"{{bap_uri}}\",\n            \"bpp_id\": \"{{bpp_id}}\",\n    \"bpp_uri\": \"{{bpp_uri}}\",\n    \"transaction_id\": \"{{$randomUUID}}\",\n    \"message_id\": \"{{$randomUUID}}\",\n    \"timestamp\": \"{{$timestamp}}\"\n  },\n  \"message\": {\n   \"order\": {\n            \"provider\": {\n                \"id\": \"104\"\n            },\n            \"items\": [\n                {\n                    \"id\": \"283\"\n                }\n            ],\n                  \"fulfillments\": [\n        {\n          \"id\": \"3\",\n          \"customer\": {\n            \"person\": {\n              \"name\": \"Lisa\"\n            },\n            \"contact\": {\n              \"phone\": \"876756454\",\n              \"email\": \"LisaS@mailinator.com\"\n            }\n          }\n        }\n      ]\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/confirm",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"confirm"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Status",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"context\": {\n    \"domain\": \"deg:retail\",\n    \"action\": \"status\",\n    \"location\": {\n      \"country\": {\n        \"code\": \"USA\"\n      },\n      \"city\": {\n        \"code\": \"NANP:628\"\n      }\n    },\n    \"version\": \"1.1.0\",\n    \"bap_id\": \"{{bap_id}}\",\n    \"bap_uri\": \"{{bap_uri}}\",\n            \"bpp_id\": \"{{bpp_id}}\",\n    \"bpp_uri\": \"{{bpp_uri}}\",\n    \"transaction_id\": \"{{$randomUUID}}\",\n    \"message_id\": \"{{$randomUUID}}\",\n    \"timestamp\": \"{{$timestamp}}\"\n  },\n  \"message\": {\n\"order_id\": \"3775\"\n\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"status"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Solar-Service",
+			"item": [
+				{
+					"name": "Search",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"context\": {\n        \"domain\": \"deg:service\",\n        \"action\": \"search\",\n        \"location\": {\n            \"country\": {\n                \"code\": \"USA\"\n            },\n            \"city\": {\n                \"code\": \"NANP:628\"\n            }\n        },\n        \"version\": \"1.1.0\",\n        \"bap_id\": \"{{bap_id}}\",\n        \"bap_uri\": \"{{bap_uri}}\",\n        \"bpp_id\": \"{{bpp_id}}\",\n        \"bpp_uri\": \"{{bpp_uri}}\",\n        \"transaction_id\": \"{{$randomUUID}}\",\n        \"message_id\": \"{{$randomUUID}}\",\n        \"timestamp\": \"{{$timestamp}}\"\n    },\n    \"message\": {\n        \"intent\": {\n            \"descriptor\": {\n                \"name\": \"resi\"\n            }\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/search",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"search"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Select",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"context\": {\n        \"domain\": \"deg:service\",\n        \"action\": \"select\",\n        \"location\": {\n            \"country\": {\n                \"code\": \"USA\"\n            },\n            \"city\": {\n                \"code\": \"NANP:628\"\n            }\n        },\n        \"version\": \"1.1.0\",\n        \"bap_id\": \"{{bap_id}}\",\n        \"bap_uri\": \"{{bap_uri}}\",\n        \"bpp_id\": \"{{bpp_id}}\",\n        \"bpp_uri\": \"{{bpp_uri}}\",\n        \"transaction_id\": \"{{$randomUUID}}\",\n        \"message_id\": \"{{$randomUUID}}\",\n        \"timestamp\": \"{{$timestamp}}\"\n    },\n    \"message\": {\n        \"order\": {\n            \"provider\": {\n                \"id\": \"329\"\n            },\n            \"items\": [\n                {\n                    \"id\": \"466\"\n                }\n            ]\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/select",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"select"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Init",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"context\": {\n    \"domain\": \"deg:service\",\n    \"action\": \"init\",\n    \"location\": {\n      \"country\": {\n        \"code\": \"USA\"\n      },\n      \"city\": {\n        \"code\": \"NANP:628\"\n      }\n    },\n    \"version\": \"1.1.0\",\n    \"bap_id\": \"{{bap_id}}\",\n    \"bap_uri\": \"{{bap_uri}}\",\n            \"bpp_id\": \"{{bpp_id}}\",\n    \"bpp_uri\": \"{{bpp_uri}}\",\n    \"transaction_id\": \"{{$randomUUID}}\",\n    \"message_id\": \"{{$randomUUID}}\",\n    \"timestamp\": \"{{$timestamp}}\"\n  },\n  \"message\": {\n   \"order\": {\n            \"provider\": {\n                \"id\": \"329\"\n            },\n            \"items\": [\n                {\n                    \"id\": \"466\"\n                }\n            ]\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/init",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"init"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Confirm",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"context\": {\n        \"domain\": \"deg:service\",\n        \"action\": \"confirm\",\n        \"location\": {\n            \"country\": {\n                \"code\": \"USA\"\n            },\n            \"city\": {\n                \"code\": \"NANP:628\"\n            }\n        },\n        \"version\": \"1.1.0\",\n        \"bap_id\": \"{{bap_id}}\",\n        \"bap_uri\": \"{{bap_uri}}\",\n        \"bpp_id\": \"{{bpp_id}}\",\n        \"bpp_uri\": \"{{bpp_uri}}\",\n        \"transaction_id\": \"{{$randomUUID}}\",\n        \"message_id\": \"{{$randomUUID}}\",\n        \"timestamp\": \"{{$timestamp}}\"\n    },\n    \"message\": {\n        \"order\": {\n            \"provider\": {\n                \"id\": \"329\"\n            },\n            \"items\": [\n                {\n                    \"id\": \"466\"\n                }\n            ],\n            \"fulfillments\": [\n                {\n                    \"id\": \"617\",\n                    \"customer\": {\n                        \"person\": {\n                            \"name\": \"Lisa\"\n                        },\n                        \"contact\": {\n                            \"phone\": \"876756454\",\n                            \"email\": \"LisaS@mailinator.com\"\n                        }\n                    }\n                }\n            ]\n        }\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/confirm",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"confirm"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Status",
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"context\": {\n        \"domain\": \"deg:service\",\n        \"action\": \"status\",\n        \"location\": {\n            \"country\": {\n                \"code\": \"USA\"\n            },\n            \"city\": {\n                \"code\": \"NANP:628\"\n            }\n        },\n        \"version\": \"1.1.0\",\n        \"bap_id\": \"{{bap_id}}\",\n        \"bap_uri\": \"{{bap_uri}}\",\n        \"bpp_id\": \"{{bpp_id}}\",\n        \"bpp_uri\": \"{{bpp_uri}}\",\n        \"transaction_id\": \"{{$randomUUID}}\",\n        \"message_id\": \"{{$randomUUID}}\",\n        \"timestamp\": \"{{$timestamp}}\"\n    },\n    \"message\": {\n        \"order_id\": \"3774\"\n    }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/status",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"status"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"packages": {},
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "bap-ps-client-deg.becknprotocol.io",
+			"type": "string"
+		},
+		{
+			"key": "bap_id",
+			"value": "bap-ps-network-deg.becknprotocol.io",
+			"type": "string"
+		},
+		{
+			"key": "bap_uri",
+			"value": "https://bap-ps-network-deg.becknprotocol.io/",
+			"type": "string"
+		},
+		{
+			"key": "bpp_id",
+			"value": "bpp-ps-network-deg.becknprotocol.io",
+			"type": "string"
+		},
+		{
+			"key": "bpp_uri",
+			"value": "https://bpp-ps-network-deg.becknprotocol.io/",
+			"type": "string"
+		}
+	]
+}
