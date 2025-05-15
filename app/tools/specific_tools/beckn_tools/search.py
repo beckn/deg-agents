@@ -1,7 +1,7 @@
 import json
 import time
 import uuid
-from typing import Any, Type, ClassVar
+from typing import Any, Type
 
 import requests
 from langchain.tools import BaseTool
@@ -13,15 +13,10 @@ from . import constants
 class BecknSearchSearchInput(BaseModel):
     """Input for BecknSearchTool."""
 
-    domain_choices: ClassVar[str] = ", ".join(
-        f"{key}: {value[0]}"
-        for key, value in constants.CONTEXT_DOMAINS_TO_DESCRIPTOR_MAPPING.items()
-    )
-
     domain: str = Field(
         description=(
             "The domain to search for. Can be one of the following: "
-            f"{domain_choices}"
+            f"{constants.CONTEXT_DOMAINS_TO_DESCRIPTOR_MAPPING.keys()}"
         )
     )
 
