@@ -13,6 +13,11 @@ from app.config.settings import (
 from app.core.history_manager import ChatHistoryManager, InMemoryChatHistory
 from langchain_openai import ChatOpenAI
 from langchain_google_genai import ChatGoogleGenerativeAI
+from app.utils.model_warmer import get_warmed_model
+import logging
+import os
+
+logger = logging.getLogger(__name__)
 
 
 # Placeholder for dynamic LLM loading
@@ -138,3 +143,31 @@ class BaseQueryHandler(ABC):
         Returns the agent's response.
         """
         pass
+
+    def _setup_llm(self):
+        """
+        Sets up the LLM based on configuration.
+        """
+        if self.llm_config.provider.lower() == "google":
+            # Try to get a warmed model first
+            warmed_model = get_warmed_model()
+            
+            if warmed_model:
+                logger.info(f"Using pre-warmed model")
+                # Create a wrapper around the warmed model to match LangChain's interface
+                from langchain_google_genai import ChatGoogleGenerativeAI
+                
+                # Use the pre-warmed model with LangChain
+                self.llm = ChatGoogleGenerativeAI(
+                    model=self.llm_config.model_name,
+                    temperature=self.llm_config.temperature,
+                    google_api_key=os.getenv("GOOGLE_API_KEY"),
+                    # Additional configuration...
+                )
+            else:
+                # Fall back to normal initialization
+                self.llm = ChatGoogleGenerativeAI(
+                    model=self.llm_config.model_name,
+                    temperature=self.llm_config.temperature,
+                    # Additional configuration...
+                )

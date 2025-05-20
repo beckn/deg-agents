@@ -85,7 +85,14 @@ class ClientOrchestrator:
         # 1. Add user query to history
         self.history_manager.add_user_message(self.client_id, query)
         current_chat_history = self.history_manager.get_history(self.client_id)
-
+        
+        # Fast path for greetings
+        lower_query = query.lower().strip()
+        if self._is_simple_greeting(lower_query):
+            greeting_response = self._get_greeting_response()
+            self.history_manager.add_ai_message(self.client_id, greeting_response)
+            return greeting_response
+        
         # 2. Route the query
         # Pass history to router if it's configured to use it
         route_key = await self.query_router.route_query(query, current_chat_history)
@@ -133,6 +140,26 @@ class ClientOrchestrator:
 
         # 6. Return AI response
         return ai_response
+
+    def _is_simple_greeting(self, query: str) -> bool:
+        """Check if the query is a simple greeting."""
+        greeting_patterns = [
+            "hi", "hello", "hey", "greetings", "good morning", "good afternoon", 
+            "good evening", "howdy", "what's up", "how are you"
+        ]
+        return any(pattern in query for pattern in greeting_patterns)
+
+    def _get_greeting_response(self) -> str:
+        """Return a quick greeting response."""
+        import random
+        greetings = [
+            "Hello! How can I help you today?",
+            "Hi there! What can I assist you with?",
+            "Hey! How can I be of service?",
+            "Greetings! What would you like to know?",
+            "Hello! I'm here to help. What do you need?"
+        ]
+        return random.choice(greetings)
 
     @classmethod
     def clear_client_instance(cls, client_id: str):
