@@ -16,6 +16,11 @@ llms:
     model_name: "gemini-2.5-flash-preview-04-17" # Specialized model for handling solar-related queries
     temperature: 0.5 # Balanced creativity and reliability for task-specific answers
 
+  grid_utility_model:
+    provider: "gemini"
+    model_name: "gemini-2.5-flash-preview-04-17"
+    temperature: 0.5
+
 # Query Router Configuration
 # Determines how incoming queries are routed to the appropriate handler
 query_router:
@@ -25,6 +30,8 @@ query_router:
       handler_config_name: "generic_query_handler"
     - route_key: "solar_installation"
       handler_config_name: "solar_query_handler"
+    - route_key: "grid_utility"
+      handler_config_name: "grid_utility_handler"
     # Additional routes can be added here for other query types
 
 # Handler Configurations
@@ -51,6 +58,14 @@ handlers:
         - "solar_retail_select"
         - "solar_retail_init"
         - "solar_retail_confirm"
+
+  grid_utility_handler:
+    class_path: "app.handlers.grid_utility_handler.GridUtilityQueryHandler"
+    llm_config_name: "grid_utility_model"
+    tools:
+      common:
+        - "general_knowledge_tool"
+      specific: []
 
 # Tool Configurations
 # Defines external utilities or capabilities that handlers can invoke

@@ -120,6 +120,15 @@ class ConnectionManager:
         Gets all connection IDs for a client ID.
         """
         return self.client_connections.get(client_id, set())
+    
+    def get_all_connections(self) -> list:
+        """
+        Get all active connection IDs.
+        
+        Returns:
+            List of connection IDs
+        """
+        return list(self.active_connections.keys())
 
 
 # Create a singleton instance

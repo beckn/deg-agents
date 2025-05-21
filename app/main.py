@@ -2,7 +2,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 import logging
-from app.routers import chat, websocket
+from app.routers import chat, websocket, grid_utility_ws, grid_alerts
 from app.middleware.auth_middleware import auth_middleware
 
 # Configure logging
@@ -29,6 +29,8 @@ app.middleware("http")(auth_middleware)
 # Include routers
 app.include_router(chat.router)
 app.include_router(websocket.router)
+app.include_router(grid_utility_ws.router)
+app.include_router(grid_alerts.router)
 
 # Health check endpoint
 @app.get("/health", tags=["health"])

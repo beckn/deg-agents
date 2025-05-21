@@ -42,6 +42,8 @@ class QueryRouter:
                 description = f"'{route.route_key}' for general conversation, questions not covered by other categories, or if unsure, especially if the history is empty or irrelevant."
             elif "solar" in route.route_key.lower():
                 description = f"'{route.route_key}' for questions specifically about solar panels, solar energy, installation, and related calculations."
+            elif "grid" in route.route_key.lower() or "utility" in route.route_key.lower():
+                description = f"'{route.route_key}' for questions about electricity grid, utility services, electricity bills, power outages, and utility programs."
 
             route_descriptions.append(description)
 

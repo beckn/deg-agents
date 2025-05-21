@@ -106,3 +106,46 @@ This document outlines the implementation plan for adding authentication, WebSoc
 4. Add error handling for edge cases
 5. Perform end-to-end testing
 6. Document API changes and new features 
+
+## Phase 4: Grid Utility Agent Implementation
+
+### Overview
+The Grid Utility Agent provides a specialized interface for utility administrators to monitor grid status, receive alerts about potential issues, and activate Demand Flexibility Programs (DFPs) to mitigate grid stress.
+
+### Step 1: Grid Stress Alert System
+1. Create a grid alert endpoint to receive transformer stress notifications
+2. Implement alert notification system to format and deliver alerts
+3. Enhance WebSocket manager to support broadcasting alerts to admin clients
+4. Add message typing to distinguish between alerts and regular messages
+
+### Step 2: DFP Options Presentation
+1. Create a repository of DFP program options (initially with mock data)
+2. Implement selection logic to choose appropriate DFP options based on transformer data
+3. Design message formats for presenting options and recommendations
+4. Implement sequential message delivery for better user experience
+
+### Step 3: Admin Interaction Flow
+1. Add command recognition for admin responses (e.g., "Yes, proceed")
+2. Implement DFP activation simulation with realistic delays
+3. Generate participation statistics and success messages
+4. Add comprehensive error handling and recovery mechanisms
+
+### Step 4: Integration and Testing
+1. Connect all components into a cohesive workflow
+2. Test the complete alert-response cycle
+3. Optimize for real-time performance
+4. Document the admin interface and commands
+
+### Implementation Files
+1. Create grid alert endpoint in `app/routers/grid_alerts.py`
+2. Enhance WebSocket functionality in `app/core/websocket_manager.py`
+3. Implement DFP options repository in `app/data/dfp_options.py`
+4. Add admin command handling in `app/routers/grid_utility_ws.py`
+5. Create utility-specific handler in `app/handlers/grid_utility_handler.py`
+
+### Future Enhancements
+1. Connect to real DFP database
+2. Implement predictive analytics for grid stress
+3. Add support for multiple admin users
+4. Create historical reporting of grid events
+5. Implement automatic DFP activation for critical situations 
