@@ -15,6 +15,7 @@ class WebSocketManager:
     def __init__(self):
         self.active_connections: Dict[str, WebSocket] = {}
         self.client_connections: Dict[str, str] = {}  # Maps client_id to connection_id
+        self.connection_tokens: Dict[str, str] = {}  # Maps connection_id to token
     
     async def connect(self, websocket: WebSocket) -> str:
         """
@@ -163,6 +164,24 @@ class WebSocketManager:
             except Exception as e:
                 logger.error(f"Error in cleanup task: {str(e)}")
 
+    def set_token(self, connection_id: str, token: str):
+        """
+        Associates an authentication token with a connection.
+        """
+        self.connection_tokens[connection_id] = token
+        logger.info(f"Token set for connection {connection_id}")
+
+    def get_token(self, connection_id: str) -> Optional[str]:
+        """
+        Gets the authentication token for a connection.
+        """
+        return self.connection_tokens.get(connection_id)
+
+    def is_authenticated(self, connection_id: str) -> bool:
+        """
+        Checks if a connection is authenticated.
+        """
+        return connection_id in self.connection_tokens
 
 # Create a singleton instance
 connection_manager = WebSocketManager() 

@@ -7,10 +7,48 @@ from app.core.websocket_manager import connection_manager
 from app.core.orchestrator import ClientOrchestrator
 import uuid
 from datetime import datetime
+from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["grid_alerts"])
+
+class SimpleGridAlertRequest(BaseModel):
+    # No required fields
+    pass
+
+@router.post("/grid-alerts/consumer")
+async def simple_grid_alert(request: SimpleGridAlertRequest = None):
+    """
+    A simple endpoint to send a grid alert message to all authenticated clients.
+    No request body needed.
+    """
+    logger.info(f"Received simple grid alert request")
+    
+    # Create a simple alert message with incentive information
+    alert_message = {
+        "type": "grid_alert",
+        "status": "success",
+        "message": "⚠️ Attention! We have detected a grid overload in your area. To help stabilize the grid, we are activating our Demand Flexibility Program.\n\nWould you like to participate?\n✅ Incentives: Earn $3–4.5 per kWh of reduced consumption\n✅ Incentives: 15% bonus if you maintain >90% participation this month."
+    }
+    
+    # Get all active connections
+    connections = connection_manager.get_all_connections()
+    logger.info(f"Found {len(connections)} active connections")
+    
+    # Track successful sends
+    successful_sends = 0
+    
+    # Send notification only to authenticated clients
+    for connection_id in connections:
+        # Check if the connection has a token (is authenticated)
+        if connection_manager.is_authenticated(connection_id):
+            success = await connection_manager.send_message(connection_id, alert_message)
+            if success:
+                successful_sends += 1
+    
+    logger.info(f"Alert sent to {successful_sends} authenticated clients")
+    return {"status": "success", "message": f"Alert sent to {successful_sends} authenticated clients"}
 
 @router.post("/grid-alerts/transformer-stress")
 async def transformer_stress_alert(data: Dict[str, Any], background_tasks: BackgroundTasks):
