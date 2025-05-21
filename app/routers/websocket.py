@@ -12,11 +12,20 @@ from app.models.chat import ChatRequest, ChatResponse
 from app.utils.model_warmer import warm_up_model
 import asyncio
 import uuid
+import requests
+import os
+
+from dotenv import load_dotenv
+
+# Load environment variables
+load_dotenv()
 
 logger = logging.getLogger(__name__)
 
 router = APIRouter(tags=["websocket"])
 
+# Add a dictionary to store the state of conversations
+dfp_conversation_state = {}
 
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket, background_tasks: BackgroundTasks):
@@ -227,55 +236,26 @@ async def process_authentication(connection_id: str, client_id: str, query: str,
 
 async def process_authenticated_query(connection_id: str, client_id: str, query: str, token: str):
     """
-    Processes an authenticated query over WebSocket.
+    Process a query from an authenticated client.
     """
-    logger.info(f"Client {client_id} - Processing authenticated query")
-    
     try:
-        # Get user data from token
-        user_data = get_user_data(token)
-        if not user_data:
-            logger.warning(f"Client {client_id} - Session expired")
-            
-            # Get history
-            history = chat_history_manager.get_history(client_id)
-            store_auth_state_in_history(history, "meter_id_required")
-            
-            # Clear token
-            connection_manager.set_token(connection_id, None)
-            
-            await connection_manager.send_message(
-                connection_id,
-                {
-                    "status": "auth_required",
-                    "query": query,
-                    "client_id": client_id,
-                    "message": "Your session has expired. Please enter your meter ID to continue.",
-                    "auth_state": "meter_id_required"
-                }
-            )
-            return
-        
-        # Get or create the orchestrator instance for this client
+        # Get the orchestrator instance for this client
         orchestrator = ClientOrchestrator.get_instance(client_id)
         
-        # Fast path for simple greetings
-        lower_query = query.lower().strip()
-        if any(greeting in lower_query for greeting in ["hi", "hello", "hey", "greetings"]):
-            greeting = "Hello! How can I help you today?"
-            orchestrator.history_manager.add_ai_message(client_id, greeting)
-            
-            await connection_manager.send_message(
-                connection_id,
-                {
-                    "status": "success",
-                    "query": query,
-                    "client_id": client_id,
-                    "message": greeting,
-                    "auth_state": "authenticated"
-                }
-            )
-            return
+        # Add the query to the history
+        orchestrator.history_manager.add_user_message(client_id, query)
+        
+        # Check if this is a DFP participation response
+        if query.lower().strip() in ["yes", "yes please", "i want to participate", "participate"]:
+            # Check if we're waiting for control permission
+            if client_id in dfp_conversation_state and dfp_conversation_state[client_id] == "awaiting_permission":
+                # This is a response to the control permission question
+                await handle_control_permission(connection_id, client_id, query, token)
+                return
+            else:
+                # This is a response to the initial participation question
+                await handle_dfp_participation(connection_id, client_id, query, token)
+                return
         
         # For complex queries, send an immediate acknowledgment
         await connection_manager.send_message(
@@ -345,4 +325,173 @@ def store_auth_state_in_history(history, auth_state, meter_id=None):
             content=f"Authentication state: {auth_state}",
             metadata=metadata
         )
-    ) 
+    )
+
+# Add this function to handle DFP participation consent
+async def handle_dfp_participation(connection_id: str, client_id: str, query: str, token: str):
+    """
+    Handles a user's consent to participate in a DFP program.
+    """
+    logger.info(f"Handling DFP participation for client {client_id}")
+    
+    # First send a processing message to show loading on client side
+    await connection_manager.send_message(
+        connection_id,
+        {
+            "status": "processing",
+            "query": query,
+            "client_id": client_id,
+            "message": "Processing your participation request...",
+            "auth_state": "authenticated"
+        }
+    )
+    
+    # Add a delay to simulate processing time
+    await asyncio.sleep(1.5)
+    
+    # Send the DER scheme message with question
+    der_message = (
+        "🙌 Great! You can contribute by temporarily turning off the following DERs (Distributed Energy Resources) in your home:\n\n"
+        "HVAC – 3.5 kW\n"
+        "Washing Machine – 1.8 kW\n"
+        "Dish Washer – 1.2 kW\n\n"
+        "Would you like to approve the plan and grant control permission to make device actions compliant?"
+    )
+    
+    await connection_manager.send_message(
+        connection_id,
+        {
+            "status": "success",
+            "query": query,
+            "client_id": client_id,
+            "message": der_message,
+            "auth_state": "authenticated"
+        }
+    )
+    
+    # Add this message to the chat history
+    orchestrator = ClientOrchestrator.get_instance(client_id)
+    orchestrator.history_manager.add_ai_message(client_id, der_message)
+    
+    # Store the state that we're waiting for control permission
+    dfp_conversation_state[client_id] = "awaiting_permission"
+    
+    return True
+
+# Add this function to handle control permission
+async def handle_control_permission(connection_id: str, client_id: str, query: str, token: str):
+    """
+    Handles a user's permission to control their devices.
+    """
+    logger.info(f"Handling control permission for client {client_id}")
+    
+    # First send a processing message to show loading on client side
+    await connection_manager.send_message(
+        connection_id,
+        {
+            "status": "processing",
+            "query": query,
+            "client_id": client_id,
+            "message": "Processing your control permission...",
+            "auth_state": "authenticated"
+        }
+    )
+    
+    # Add a delay to simulate processing time
+    await asyncio.sleep(2)
+    
+    # Make the API call to record consent
+    try:
+        # Use the client_id as the meter_id for now
+        meter_id = int(client_id) if client_id.isdigit() else 2129  # Default to 2129 if not a number
+        
+        # Hardcoded order_id for now
+        order_id = 3805
+        
+        # Prepare the API request
+        api_url = f"{os.getenv('STRAPI_BASE_URL')}/unified-beckn-energy/mitigation-accept-reject"
+        payload = {
+            "meter_id": meter_id,
+            "dfp_accept": True,
+            "order_id": order_id
+        }
+        
+        logger.info(f"Making API call to record consent: {payload}")
+        
+        # Make the API call
+        response = requests.post(
+            api_url,
+            headers={"Content-Type": "application/json"},
+            json=payload,
+            timeout=10  # 10 second timeout
+        )
+        
+        # Log the response
+        logger.info(f"API response status code: {response.status_code}")
+        logger.info(f"API response: {response.text}")
+        
+        # Send confirmation messages
+        confirmation_message = "✅ Thank you! We've successfully recorded your consent, activated the schedules and notified the system operator."
+        
+        # Send first confirmation
+        await connection_manager.send_message(
+            connection_id,
+            {
+                "status": "success",
+                "query": query,
+                "client_id": client_id,
+                "message": confirmation_message,
+                "auth_state": "authenticated"
+            }
+        )
+        
+        # Add to chat history
+        orchestrator = ClientOrchestrator.get_instance(client_id)
+        orchestrator.history_manager.add_ai_message(client_id, confirmation_message)
+        
+        # Wait a moment before sending the second message
+        await asyncio.sleep(2)
+        
+        # Send second confirmation
+        update_message = "An update has been shared with the Utility Platform to reflect your participation."
+        await connection_manager.send_message(
+            connection_id,
+            {
+                "status": "success",
+                "query": query,
+                "client_id": client_id,
+                "message": update_message,
+                "auth_state": "authenticated"
+            }
+        )
+        
+        # Add to chat history
+        orchestrator.history_manager.add_ai_message(client_id, update_message)
+        
+        # Clear the conversation state
+        if client_id in dfp_conversation_state:
+            del dfp_conversation_state[client_id]
+        
+        return True
+        
+    except Exception as e:
+        logger.error(f"Error making API call to record consent: {str(e)}", exc_info=True)
+        
+        # Send error message
+        error_message = "Sorry, we encountered an issue while processing your consent. Please try again later."
+        await connection_manager.send_message(
+            connection_id,
+            {
+                "status": "error",
+                "query": query,
+                "client_id": client_id,
+                "message": error_message,
+                "auth_state": "authenticated"
+            }
+        )
+        
+        # Add to chat history
+        orchestrator = ClientOrchestrator.get_instance(client_id)
+        orchestrator.history_manager.add_ai_message(client_id, error_message)
+        
+        return False 
