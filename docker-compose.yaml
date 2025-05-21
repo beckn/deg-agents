@@ -1,0 +1,13 @@
+services:
+  app:
+    build:
+      context: . # Use the current directory as the build context
+      dockerfile: Dockerfile # Specify the Dockerfile to use
+    ports:
+      - "8000:8000" # Map port 8000 on the host to port 8000 in the container
+    volumes:
+      - ./:/app
+
+    env_file:
+      - .env
+    container_name: deg_agents_app # Optional: A friendly name for your container
