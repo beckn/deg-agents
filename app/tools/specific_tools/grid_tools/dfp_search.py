@@ -310,13 +310,13 @@ Minimum Load: 5 kW
     
     def _format_dfp_api_response(self, response_data: Dict[str, Any]) -> str:
         """
-        Format the DFP API response for the agent.
+        Format the DFP API response for the agent using Markdown.
         
         Args:
             response_data: The response data from the API
             
         Returns:
-            A formatted string with the DFP options
+            A formatted string with the DFP options in Markdown
         """
         try:
             # The response has a 'responses' array
@@ -338,8 +338,8 @@ Minimum Load: 5 kW
                 logger.warning("No providers found in API response")
                 return "No DFP options found."
             
-            # Format the options
-            formatted_options = "Here are the available Demand Flexibility Program (DFP) options:\n\n"
+            # Format the options with Markdown
+            formatted_options = "Based on the current stress levels, here are the available **Demand Flexibility Program (DFP)** options:\n\n"
             
             for provider_index, provider in enumerate(providers, 1):
                 # Get the items (DFP options)
@@ -354,19 +354,20 @@ Minimum Load: 5 kW
                     item_name = descriptor.get("name", f"Option {provider_index}.{item_index}")
                     item_description = descriptor.get("long_desc", "No description available")
                     
-                    # Get the price
-                    price = item.get("price", {})
-                    reward = price.get("value", "Unknown")
-                    currency = price.get("currency", "USD")
-                    
-                    # Format the option
-                    formatted_options += f"Option {item_index}: {item_name}\n"
-                    formatted_options += f"{item_description}\n"
+                    # Format the option with Markdown
+                    formatted_options += f"### Option {item_index}: {item_name}\n\n"
+                    formatted_options += f"{item_description}\n\n"
                     
                     # Get the tags
                     tags = item.get("tags", [])
                     
-                    # Extract information from tags
+                    # Extract information from tags and format as bullet points
+                    reward = "Unknown"
+                    bonus = "Unknown"
+                    penalty = "Unknown"
+                    category = "Unknown"
+                    minimum_load = "Unknown"
+                    
                     for tag in tags:
                         tag_list = tag.get("list", [])
                         
@@ -376,17 +377,25 @@ Minimum Load: 5 kW
                             value = tag_item.get("value", "Unknown")
                             
                             if name == "Reward":
-                                formatted_options += f"Reward: {value}\n"
+                                reward = value
                             elif name == "Bonus":
-                                formatted_options += f"Bonus: {value}\n"
+                                bonus = value
                             elif name == "Penalties":
-                                formatted_options += f"Penalty: {value}\n"
+                                penalty = value
                             elif name == "Minimum sanctioned load":
-                                formatted_options += f"Minimum Load: {value}\n"
+                                minimum_load = value
                             elif name == "Categories":
-                                formatted_options += f"Category: {value}\n"
+                                category = value
                     
-                    formatted_options += "\n"
+                    # Add bullet points for all properties
+                    formatted_options += f"- **Category**: {category}  \n"
+                    formatted_options += f"- **Minimum Load**: {minimum_load}  \n"
+                    formatted_options += f"- **Reward**: {reward}  \n"
+                    formatted_options += f"- **Bonus**: {bonus}  \n"
+                    formatted_options += f"- **Penalty**: {penalty}  \n"
+                    
+                    # Add spacing between options (instead of horizontal rule)
+                    formatted_options += "\n\n"
             
             return formatted_options
         except Exception as e:

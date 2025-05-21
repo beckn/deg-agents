@@ -198,6 +198,58 @@ class GridUtilityQueryHandler(BaseQueryHandler):
                 # Call the activation API with the hardcoded data
                 return self._activate_dfp_option(client_id, hardcoded_recommendation)
         
+        # Check if this is a DFP rejection response (user wants the alternative option)
+        elif query.lower().strip() in ["no", "no, try the other one", "try the other one", "use the other option", "alternative", "try alternative"]:
+            logger.info("Detected DFP rejection request - user wants the alternative option")
+            
+            # Get the options from the cache
+            dfp_options = cache.get("dfp_options", [])
+            
+            # Log the current state of the options
+            logger.info(f"DFP options exists: {bool(dfp_options)}")
+            logger.info(f"DFP options type: {type(dfp_options)}")
+            logger.info(f"Number of options: {len(dfp_options)}")
+            for i, option in enumerate(dfp_options):
+                logger.info(f"Option {i+1}: {option.get('name', 'Unknown')} ({option.get('id', 'Unknown')})")
+            
+            # Use the second option if available, otherwise use the first option
+            if dfp_options and len(dfp_options) > 1:
+                logger.info("Using second option from DFP options")
+                option_data = dfp_options[1]  # Use the second option
+            elif dfp_options:
+                logger.info("Only one option available, using the first option")
+                option_data = dfp_options[0]  # Fall back to the first option if only one is available
+            else:
+                logger.info("No options found in cache, using hardcoded recommendation")
+                # Create a hardcoded recommendation for the second option
+                option_data = {
+                    "id": "EDR",
+                    "name": "Emergency Demand Reduction",
+                    "description": "Emergency Demand Reduction (EDR) is designed for consumers who can rapidly curtail significant energy use during critical, rare grid emergencies.",
+                    "reward": "$250/year per kW available",
+                    "bonus": "$10.00 per kWh curtailed during events",
+                    "penalty": "50% annual availability fee reduction per missed event",
+                    "category": "Residential",
+                    "minimum_load": "5 kW"
+                }
+            
+            # Create a recommendation with the option data
+            recommendation = {
+                "option": option_data,
+                "transformer": {
+                    "name": "Transformer_0",
+                    "id": "TX160",
+                    "current_load": "0.5",
+                    "load_percentage": "0.4",
+                    "time_estimate": "30"
+                }
+            }
+            
+            logger.info(f"Using alternative option: {option_data.get('name', 'Unknown')} ({option_data.get('id', 'Unknown')})")
+            
+            # Call the activation API with the option data
+            return self._activate_dfp_option(client_id, recommendation)
+        
         # Check if this is a DFP recommendation request
         if "grid stress alert" in query.lower():
             logger.info("Detected DFP recommendation request, using DFP search tool directly")
@@ -257,11 +309,12 @@ Minimum Load: 5 kW
                 # Randomly select which DFP option to recommend
                 recommended_option = random.choice(["DDR", "EDR"])
                 
+                # Format the recommendation text with Markdown
                 if recommended_option == "DDR":
-                    recommendation_text = f"I recommend Option 1 – Dynamic Demand Response (DDR) for immediate grid relief. The current situation at {transformer_name} shows a load of {current_load} kWh ({load_percentage}% of capacity), which requires a rapid but moderate response. DDR is ideal for this scenario as it can be quickly activated and provides immediate relief without excessive disruption."
+                    recommendation_text = f"### 🔎 Recommendation\n\n**Option 1 – Dynamic Demand Response (DDR)** is recommended for immediate grid relief.\n\n> The current situation at {transformer_name} shows a load of **{current_load} kWh ({load_percentage}% of capacity)**, which requires a rapid but moderate response. DDR is ideal for this scenario as it can be quickly activated and provides immediate relief without excessive disruption.\n\n\n**Would you like to proceed?**"
                     option_index = 0  # Index in the options array (0-based)
                 else:
-                    recommendation_text = f"I recommend Option 2 – Emergency Demand Reduction (EDR) for immediate grid relief. The current situation at {transformer_name} shows a load of {current_load} kWh ({load_percentage}% of capacity), which requires a significant and immediate response. EDR is designed for critical situations like this and can provide the necessary load reduction quickly."
+                    recommendation_text = f"### 🔎 Recommendation\n\n**Option 2 – Emergency Demand Reduction (EDR)** is recommended for immediate grid relief.\n\n> The current situation at {transformer_name} shows a load of **{current_load} kWh ({load_percentage}% of capacity)**, which requires a significant and immediate response. EDR is designed for critical situations like this and can provide the necessary load reduction quickly.\n\n\n**Would you like to proceed?**"
                     option_index = 1  # Index in the options array (0-based)
                 
                 # Store the recommendation data for later use
@@ -294,10 +347,8 @@ Minimum Load: 5 kW
                 else:
                     logger.warning("No client_id found, cannot store DFP recommendation")
                 
-                # Format the response
-                response = f"Based on the grid stress alert for {transformer_name} [{transformer_id}], here are the available Demand Flexibility Program (DFP) options:\n\n{dfp_options}\n🔎{recommendation_text}\n\nWould you like to proceed with activating the {recommended_option} program?"
-                
-                logger.info(f"GridUtilityQueryHandler got response: {response[:100]}...")
+                # Format the complete response with Markdown
+                response = f"## ⚠️ Grid Stress Alert for {transformer_name} [{transformer_id}]\n\n{dfp_options}{recommendation_text}"
                 
                 return response
             except Exception as e:
@@ -390,14 +441,58 @@ Minimum Load: 5 kW
             transformer_name = transformer.get("name", "Unknown")
             transformer_id = transformer.get("id", "Unknown")
             
-            # Here you would make the actual API call to activate the DFP option
-            # For now, we'll just return a success message
+            # Make the actual API call to activate the DFP option
+            activation_url = "https://bpp-unified-strapi-deg.becknprotocol.io/unified-beckn-energy/mitigation-activate"
             
-            # Clear the recommendation after activation
-            if client_id in self.client_dfp_recommendations:
-                del self.client_dfp_recommendations[client_id]
+            # Prepare the request payload
+            payload = {
+                "itemId": str(option_id)  # Ensure the ID is a string
+            }
             
-            return f"✅ Proceeding to Activate {option_name} ({option_id}) for transformer {transformer_name} [{transformer_id}]. Please wait…"
+            # Log the API request
+            logger.info(f"Making API call to activate DFP option: {option_id}")
+            logger.info(f"API URL: {activation_url}")
+            logger.info(f"API payload: {payload}")
+            
+            # Make the API call
+            import requests
+            response = requests.post(
+                activation_url,
+                headers={"Content-Type": "application/json"},
+                json=payload,
+                timeout=10  # 10 second timeout
+            )
+            
+            # Log the API response
+            logger.info(f"API response status code: {response.status_code}")
+            logger.info(f"API response: {response.text}")
+            
+            # Check if the API call was successful
+            if response.status_code == 200:
+                # Parse the response
+                try:
+                    response_data = response.json()
+                    activation_status = response_data.get("status", "Unknown")
+                    activation_message = response_data.get("message", "No message provided")
+                    
+                    logger.info(f"Activation status: {activation_status}")
+                    logger.info(f"Activation message: {activation_message}")
+                    
+                    # Clear the recommendation after activation
+                    if client_id in self.client_dfp_recommendations:
+                        del self.client_dfp_recommendations[client_id]
+                    
+                    # Return a success message with the API response details
+                    return f"✅ Successfully activated {option_name} ({option_id}) for transformer {transformer_name} [{transformer_id}].\n\nStatus: {activation_status}\nMessage: {activation_message}"
+                except Exception as e:
+                    logger.error(f"Error parsing API response: {str(e)}", exc_info=True)
+                    # Return a success message without the API response details
+                    return f"✅ Proceeding to Activate {option_name} ({option_id}) for transformer {transformer_name} [{transformer_id}]. Please wait…"
+            else:
+                # API call failed
+                error_message = f"API call failed with status code {response.status_code}: {response.text}"
+                logger.error(error_message)
+                return f"❌ Failed to activate {option_name} ({option_id}) for transformer {transformer_name} [{transformer_id}]. Error: {error_message}"
         except Exception as e:
             logger.error(f"Error activating DFP option: {str(e)}", exc_info=True)
             return f"I apologize, but I encountered an error while activating the DFP option: {str(e)}" 
