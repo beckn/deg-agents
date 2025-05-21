@@ -1,5 +1,5 @@
-from fastapi import APIRouter, BackgroundTasks, Depends
-from typing import Dict, Any
+from fastapi import APIRouter, BackgroundTasks
+from typing import Dict, Any, List
 import logging
 import random
 import asyncio
@@ -20,6 +20,17 @@ async def transformer_stress_alert(data: Dict[str, Any], background_tasks: Backg
     transformer = data.get("transformer", {})
     transformer_id = transformer.get("id")
     transformer_name = transformer.get("name", "Unknown")
+    city = transformer.get("city", "Unknown")
+    state = transformer.get("state", "Unknown")
+    max_capacity_kw = transformer.get("max_capacity_KW", 0)
+    current_load_kwh = data.get("totalBaseKWh", 0)
+    
+    # Extract substation details
+    substation = transformer.get("substation", {})
+    substation_name = substation.get("name", "Unknown")
+    
+    # Calculate load percentage
+    load_percentage = (current_load_kwh / max_capacity_kw) * 100 if max_capacity_kw else 0
     
     # Format the transformer ID for display (e.g., TX005)
     display_id = f"TX{transformer_id:03d}" if transformer_id else "Unknown"
@@ -27,24 +38,60 @@ async def transformer_stress_alert(data: Dict[str, Any], background_tasks: Backg
     # Generate a random time estimate between 25-35 minutes
     time_estimate = random.randint(25, 35)
     
-    # Format the alert message
-    alert_message = f"⚠️ Grid Stress Detected at Central Feeder Hub [{display_id}] – Capacity Breach Likely in {time_estimate} Minutes."
+    # Format the alert message with more details
+    alert_message = (
+        f"⚠️ Grid Stress Detected at {transformer_name} [{display_id}] – "
+        f"Capacity Breach Likely in {time_estimate} Minutes.\n\n"
+        f"Location: {city}, {state}\n"
+        f"Substation: {substation_name}\n"
+        f"Current Load: {current_load_kwh:.2f} kWh ({load_percentage:.1f}% of capacity)\n"
+        f"Maximum Capacity: {max_capacity_kw} kW"
+    )
     
     # Prepare transformer data for the client
     transformer_data = {
         "transformer_id": transformer_id,
         "display_id": display_id,
         "name": transformer_name,
-        "max_capacity_kw": transformer.get("max_capacity_KW"),
-        "current_load_kwh": data.get("totalBaseKWh", 0),
+        "city": city,
+        "state": state,
+        "max_capacity_kw": max_capacity_kw,
+        "current_load_kwh": current_load_kwh,
+        "load_percentage": load_percentage,
         "time_estimate": time_estimate,
-        "substation": transformer.get("substation", {}).get("name")
+        "substation_name": substation_name
     }
     
     # Broadcast the alert in the background to avoid blocking the response
-    background_tasks.add_task(broadcast_grid_alert, alert_message, transformer_data)
+    background_tasks.add_task(process_grid_alert, alert_message, transformer_data)
     
     return {"status": "success", "message": "Alert broadcasted to connected clients"}
+
+
+async def process_grid_alert(alert_message: str, transformer_data: Dict[str, Any]):
+    """
+    Process a grid alert: send alert, fetch DFP options, and send recommendation.
+    """
+    # Step 1: Broadcast the alert
+    await broadcast_grid_alert(alert_message, transformer_data)
+    
+    # Step 2: Fetch DFP options (simulated API call)
+    dfp_options = await fetch_dfp_options(transformer_data)
+    
+    # Step 3: Wait a moment before sending options (for better UX)
+    await asyncio.sleep(3)
+    
+    # Step 4: Send DFP options to clients
+    await broadcast_dfp_options(dfp_options, transformer_data)
+    
+    # Step 5: Determine the recommended option
+    recommended_option = get_recommended_option(dfp_options, transformer_data)
+    
+    # Step 6: Wait a moment before sending recommendation
+    await asyncio.sleep(2)
+    
+    # Step 7: Send recommendation to clients
+    await broadcast_dfp_recommendation(recommended_option, dfp_options, transformer_data)
 
 
 async def broadcast_grid_alert(alert_message: str, transformer_data: Dict[str, Any]):
@@ -54,10 +101,14 @@ async def broadcast_grid_alert(alert_message: str, transformer_data: Dict[str, A
     # Get all client connections
     client_connections = connection_manager.get_all_connections()
     
-    # Prepare the message
+    if not client_connections:
+        logger.warning("No connected clients to broadcast alert to")
+        return
+    
+    # Prepare the message with status "success"
     message = {
         "type": "grid_alert",
-        "status": "alert",
+        "status": "success",
         "message": alert_message,
         "transformer_data": transformer_data
     }
@@ -67,92 +118,24 @@ async def broadcast_grid_alert(alert_message: str, transformer_data: Dict[str, A
         await connection_manager.send_message(connection_id, message)
     
     logger.info(f"Grid alert broadcasted to {len(client_connections)} clients")
-    
-    # Wait a few seconds before sending DFP options
-    await asyncio.sleep(3)
-    
-    # Send DFP options to all clients
-    await broadcast_dfp_options(transformer_data)
 
 
-async def broadcast_dfp_options(transformer_data: Dict[str, Any]):
+async def fetch_dfp_options(transformer_data: Dict[str, Any]) -> List[Dict[str, Any]]:
     """
-    Broadcasts DFP options to all connected clients.
+    Fetch DFP options from an external API.
+    Currently simulated with hardcoded data.
+    
+    Args:
+        transformer_data: Data about the transformer with stress
+        
+    Returns:
+        List of DFP options
     """
-    # Get all client connections
-    client_connections = connection_manager.get_all_connections()
+    # TODO: Replace with actual API call
+    # Simulate API call delay
+    await asyncio.sleep(1)
     
-    # Get DFP options (hardcoded for now)
-    dfp_options = get_dfp_options(transformer_data)
-    
-    # Format the options message
-    options_message = "Based on the current stress levels, here are the available Demand Flexibility Program (DFP) options:\n\n"
-    
-    for i, option in enumerate(dfp_options, 1):
-        options_message += f"Option {i}: {option['name']}\n"
-        options_message += f"{option['description']}\n"
-        options_message += f"Reward: {option['reward']}\n"
-        options_message += f"Bonus: {option['bonus']}\n"
-        options_message += f"Penalty: {option['penalty']}\n"
-        options_message += f"Category: {option['category']}\n"
-        options_message += f"Minimum Load: {option['minimum_load']} kW\n\n"
-    
-    # Prepare the message
-    message = {
-        "type": "dfp_options",
-        "status": "success",
-        "message": options_message,
-        "options": dfp_options
-    }
-    
-    # Broadcast to all clients
-    for connection_id in client_connections:
-        await connection_manager.send_message(connection_id, message)
-    
-    logger.info(f"DFP options broadcasted to {len(client_connections)} clients")
-    
-    # Wait a few seconds before sending recommendation
-    await asyncio.sleep(2)
-    
-    # Send recommendation to all clients
-    await broadcast_dfp_recommendation(transformer_data)
-
-
-async def broadcast_dfp_recommendation(transformer_data: Dict[str, Any]):
-    """
-    Broadcasts DFP recommendation to all connected clients.
-    """
-    # Get all client connections
-    client_connections = connection_manager.get_all_connections()
-    
-    # Get recommended option (hardcoded for now)
-    recommended_option = get_recommended_option(transformer_data)
-    
-    # Format the recommendation message
-    recommendation_message = f"🔎I recommend Option {recommended_option} – Dynamic Demand Response (DDR) for immediate grid relief. Would you like to proceed?"
-    
-    # Prepare the message
-    message = {
-        "type": "dfp_recommendation",
-        "status": "success",
-        "message": recommendation_message,
-        "recommended_option": recommended_option
-    }
-    
-    # Broadcast to all clients
-    for connection_id in client_connections:
-        await connection_manager.send_message(connection_id, message)
-    
-    logger.info(f"DFP recommendation broadcasted to {len(client_connections)} clients")
-
-
-def get_dfp_options(transformer_data: Dict[str, Any]) -> list:
-    """
-    Returns a list of DFP options based on transformer data.
-    Currently returns hardcoded options.
-    """
-    # In a real implementation, this would query a database or service
-    # For now, we'll return hardcoded options
+    # Return hardcoded options for now
     return [
         {
             "id": 1,
@@ -177,11 +160,100 @@ def get_dfp_options(transformer_data: Dict[str, Any]) -> list:
     ]
 
 
-def get_recommended_option(transformer_data: Dict[str, Any]) -> int:
+async def broadcast_dfp_options(dfp_options: List[Dict[str, Any]], transformer_data: Dict[str, Any]):
     """
-    Returns the recommended DFP option based on transformer data.
-    Currently always returns option 1.
+    Broadcasts DFP options to all connected WebSocket clients.
     """
-    # In a real implementation, this would use more sophisticated logic
+    # Get all client connections
+    client_connections = connection_manager.get_all_connections()
+    
+    if not client_connections:
+        logger.warning("No connected clients to broadcast DFP options to")
+        return
+    
+    # Format the options message
+    options_message = "Based on the current stress levels, here are the available Demand Flexibility Program (DFP) options:\n\n"
+    
+    for i, option in enumerate(dfp_options, 1):
+        options_message += f"Option {i}: {option['name']}\n"
+        options_message += f"{option['description']}\n"
+        options_message += f"Reward: {option['reward']}\n"
+        options_message += f"Bonus: {option['bonus']}\n"
+        options_message += f"Penalty: {option['penalty']}\n"
+        options_message += f"Category: {option['category']}\n"
+        options_message += f"Minimum Load: {option['minimum_load']} kW\n\n"
+    
+    # Prepare the message
+    message = {
+        "type": "dfp_options",
+        "status": "success",
+        "message": options_message,
+        "options": dfp_options,
+        "transformer_data": transformer_data
+    }
+    
+    # Broadcast to all clients
+    for connection_id in client_connections:
+        await connection_manager.send_message(connection_id, message)
+    
+    logger.info(f"DFP options broadcasted to {len(client_connections)} clients")
+
+
+def get_recommended_option(dfp_options: List[Dict[str, Any]], transformer_data: Dict[str, Any]) -> int:
+    """
+    Determine the recommended DFP option based on transformer data and available options.
+    Currently returns a hardcoded recommendation.
+    
+    Args:
+        dfp_options: List of available DFP options
+        transformer_data: Data about the transformer with stress
+        
+    Returns:
+        The index of the recommended option (1-based)
+    """
+    # TODO: Implement actual recommendation logic
     # For now, always recommend option 1
-    return 1 
+    return 1
+
+
+async def broadcast_dfp_recommendation(recommended_option: int, dfp_options: List[Dict[str, Any]], transformer_data: Dict[str, Any]):
+    """
+    Broadcasts DFP recommendation to all connected WebSocket clients.
+    """
+    # Get all client connections
+    client_connections = connection_manager.get_all_connections()
+    
+    if not client_connections:
+        logger.warning("No connected clients to broadcast DFP recommendation to")
+        return
+    
+    # Get the recommended option details
+    option_index = recommended_option - 1  # Convert to 0-based index
+    if 0 <= option_index < len(dfp_options):
+        option_name = dfp_options[option_index]['name']
+    else:
+        option_name = "Unknown Option"
+    
+    # Format the recommendation message
+    recommendation_message = f"🔎I recommend Option {recommended_option} – {option_name} for immediate grid relief. Would you like to proceed?"
+    
+    # Prepare the message
+    message = {
+        "type": "dfp_recommendation",
+        "status": "success",
+        "message": recommendation_message,
+        "recommended_option": recommended_option,
+        "transformer_data": transformer_data
+    }
+    
+    # Broadcast to all clients
+    for connection_id in client_connections:
+        # Store transformer data for this client to enable activation
+        client_id = connection_manager.get_client(connection_id)
+        if client_id:
+            from app.routers.grid_utility_ws import transformer_data_store
+            transformer_data_store[client_id] = transformer_data
+        
+        await connection_manager.send_message(connection_id, message)
+    
+    logger.info(f"DFP recommendation broadcasted to {len(client_connections)} clients") 
