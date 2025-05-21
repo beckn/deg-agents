@@ -1,34 +1,41 @@
 from langchain.tools import BaseTool
-from typing import Type, Any
+from typing import Optional, Type
 from pydantic import BaseModel, Field
 
 
 # If the tool needs input, define a Pydantic model for it
 class GeneralKnowledgeInput(BaseModel):
-    question: str = Field(description="The general knowledge question to ask")
+    query: str = Field(description="The query to search for general knowledge")
 
 
-class GeneralKnowledgeTool(BaseTool):
+class GeneralKnowledgeAssistantTool(BaseTool):
     name: str = "general_knowledge_assistant"
-    description: str = (
-        "Useful for answering general knowledge questions or providing "
-        "information on a wide range of topics. This tool can access "
-        "a broad dataset of information."
-    )
+    description: str = "A tool that provides general factual knowledge about the world"
     args_schema: Type[BaseModel] = GeneralKnowledgeInput
 
     # This is a stub. In a real scenario, it might call another LLM, a search engine, or a specific API.
-    def _run(self, question: str, **kwargs: Any) -> str:
-        print(f"GeneralKnowledgeTool received question: {question}")
-        # Simulate an answer
-        if "capital of france" in question.lower():
-            return "The capital of France is Paris."
-        elif "python programming" in question.lower():
-            return "Python is a versatile high-level programming language known for its readability."
-        else:
-            return f"I am a stub for general knowledge. I received your question: '{question}'."
+    def _run(self, query: str) -> str:
+        """
+        Provides general knowledge about the world.
+        
+        Args:
+            query: The query to search for general knowledge
+            
+        Returns:
+            The general knowledge
+        """
+        # In a real implementation, this would use a knowledge base or API
+        # For now, we'll just return a generic response
+        return f"I can provide information about {query}, but I need to connect to a knowledge base first."
 
-    async def _arun(self, question: str, **kwargs: Any) -> str:
-        # For async, you can make this truly async if the underlying operation is.
-        print(f"GeneralKnowledgeTool (async) received question: {question}")
-        return self._run(question, **kwargs)
+    async def _arun(self, query: str) -> str:
+        """
+        Async version of _run.
+        
+        Args:
+            query: The query to search for general knowledge
+            
+        Returns:
+            The general knowledge
+        """
+        return self._run(query)

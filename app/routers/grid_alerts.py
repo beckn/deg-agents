@@ -1,9 +1,12 @@
 from fastapi import APIRouter, BackgroundTasks
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Set
 import logging
 import random
 import asyncio
 from app.core.websocket_manager import connection_manager
+from app.core.orchestrator import ClientOrchestrator
+import uuid
+from datetime import datetime
 
 logger = logging.getLogger(__name__)
 
@@ -70,190 +73,229 @@ async def transformer_stress_alert(data: Dict[str, Any], background_tasks: Backg
 
 async def process_grid_alert(alert_message: str, transformer_data: Dict[str, Any]):
     """
-    Process a grid alert: send alert, fetch DFP options, and send recommendation.
+    Process a grid alert using the agent.
     """
-    # Step 1: Broadcast the alert
-    await broadcast_grid_alert(alert_message, transformer_data)
-    
-    # Step 2: Fetch DFP options (simulated API call)
-    dfp_options = await fetch_dfp_options(transformer_data)
-    
-    # Step 3: Wait a moment before sending options (for better UX)
-    await asyncio.sleep(3)
-    
-    # Step 4: Send DFP options to clients
-    await broadcast_dfp_options(dfp_options, transformer_data)
-    
-    # Step 5: Determine the recommended option
-    recommended_option = get_recommended_option(dfp_options, transformer_data)
-    
-    # Step 6: Wait a moment before sending recommendation
-    await asyncio.sleep(2)
-    
-    # Step 7: Send recommendation to clients
-    await broadcast_dfp_recommendation(recommended_option, dfp_options, transformer_data)
+    try:
+        # Step 1: Broadcast the alert
+        logger.info("Broadcasting grid alert...")
+        client_connections = await broadcast_grid_alert(alert_message, transformer_data)
+        
+        if not client_connections:
+            logger.warning("No client connections found, skipping DFP recommendations")
+            return
+        
+        logger.info(f"Found {len(client_connections)} client connections")
+        
+        # Step 2: For each client, get agent recommendations
+        for connection_id in client_connections:
+            try:
+                client_id = connection_manager.get_client(connection_id)
+                if not client_id:
+                    # Generate a default client ID if none exists
+                    client_id = f"grid_client_{str(uuid.uuid4())[:8]}"
+                    logger.info(f"No client ID found for connection {connection_id}, generating default: {client_id}")
+                    connection_manager.set_client(connection_id, client_id)
+                
+                logger.info(f"Processing for client {client_id}, connection {connection_id}")
+                
+                # Add alert to chat history as a "system" user message instead of using add_system_message
+                orchestrator = ClientOrchestrator.get_instance(client_id)
+                # Use add_user_message with a special prefix instead of add_system_message
+                orchestrator.history_manager.add_user_message(
+                    client_id, 
+                    f"[SYSTEM ALERT] {alert_message}"
+                )
+                
+                # Wait a moment before sending agent request (for better UX)
+                logger.info("Waiting before sending agent request...")
+                await asyncio.sleep(2)
+                
+                # Get DFP recommendations from agent
+                logger.info("Getting DFP recommendations from agent...")
+                agent_response = await get_agent_dfp_recommendation(client_id, transformer_data)
+                
+                # Store transformer data for this client
+                logger.info("Storing transformer data for client...")
+                from app.routers.grid_utility_ws import transformer_data_store
+                transformer_data_store[client_id] = transformer_data
+                
+                # Send the agent's response directly
+                logger.info("Sending agent response to client...")
+                await connection_manager.send_message(
+                    connection_id,
+                    {
+                        "type": "dfp_options_and_recommendation",
+                        "status": "success",
+                        "message": agent_response,
+                        "transformer_data": transformer_data
+                    }
+                )
+                logger.info("Agent response sent successfully")
+            except Exception as e:
+                logger.error(f"Error processing client {connection_id}: {str(e)}", exc_info=True)
+    except Exception as e:
+        logger.error(f"Error in process_grid_alert: {str(e)}", exc_info=True)
 
 
-async def broadcast_grid_alert(alert_message: str, transformer_data: Dict[str, Any]):
+async def broadcast_grid_alert(alert_message: str, transformer_data: Dict[str, Any]) -> Set[str]:
     """
     Broadcasts a grid alert to all connected WebSocket clients.
+    
+    Returns:
+        Set of connection IDs that received the alert
     """
     # Get all client connections
     client_connections = connection_manager.get_all_connections()
     
     if not client_connections:
         logger.warning("No connected clients to broadcast alert to")
-        return
+        return set()
     
     # Prepare the message with status "success"
     message = {
         "type": "grid_alert",
         "status": "success",
         "message": alert_message,
-        "transformer_data": transformer_data
+        "transformer_data": transformer_data,
+        "timestamp": datetime.now().isoformat()
     }
+    
+    # Track successful sends
+    successful_connections = set()
     
     # Broadcast to all clients
     for connection_id in client_connections:
-        await connection_manager.send_message(connection_id, message)
+        success = await connection_manager.send_message(connection_id, message)
+        if success:
+            successful_connections.add(connection_id)
     
-    logger.info(f"Grid alert broadcasted to {len(client_connections)} clients")
+    logger.info(f"Grid alert broadcasted to {len(successful_connections)} clients")
+    
+    return successful_connections
 
 
-async def fetch_dfp_options(transformer_data: Dict[str, Any]) -> List[Dict[str, Any]]:
+async def get_agent_dfp_recommendation(client_id: str, transformer_data: Dict[str, Any]) -> str:
     """
-    Fetch DFP options from an external API.
-    Currently simulated with hardcoded data.
+    Get DFP recommendations from the agent.
+    
+    Args:
+        client_id: The client ID
+        transformer_data: Data about the transformer with stress
+        
+    Returns:
+        The agent's response
+    """
+    logger.info(f"Getting DFP recommendations from agent for client {client_id}")
+    
+    try:
+        # Get the orchestrator instance for this client
+        orchestrator = ClientOrchestrator.get_instance(client_id)
+        
+        # Create a prompt for the agent
+        prompt = (
+            f"A grid stress alert has been detected for transformer {transformer_data['name']} "
+            f"[{transformer_data['display_id']}]. The current load is {transformer_data['current_load_kwh']:.2f} kWh "
+            f"({transformer_data['load_percentage']:.1f}% of capacity), and capacity breach is likely in "
+            f"{transformer_data['time_estimate']} minutes.\n\n"
+            f"Please use the dfp_search tool to get available Demand Flexibility Program (DFP) options. "
+            f"Then analyze the options and recommend the best one for this specific situation. "
+            f"Format your response as follows:\n\n"
+            f"1. First, list the available DFP options with their details (name, description, rewards, penalties, etc.)\n"
+            f"2. Then, recommend the best option for this specific situation based on the current load and time estimate\n"
+            f"3. Ask if the admin would like to proceed with the recommended option"
+        )
+        
+        logger.info(f"Created prompt for agent: {prompt[:100]}...")
+        
+        # Add the prompt to history as a user message with a special prefix
+        orchestrator.history_manager.add_user_message(client_id, f"[SYSTEM QUERY] {prompt}")
+        
+        # Process the query directly with the grid utility handler (similar to grid_utility_ws.py)
+        try:
+            # Get the route key for grid utility
+            route_key = "grid_utility"
+            
+            # Find the handler config name associated with this route_key
+            handler_config_name = None
+            for route_cfg in orchestrator.app_config.query_router.routes:
+                if route_cfg.route_key == route_key:
+                    handler_config_name = route_cfg.handler_config_name
+                    break
+            
+            if not handler_config_name:
+                raise ValueError(f"No handler configuration found for route key: {route_key}")
+            
+            logger.info(f"Getting handler for config name: {handler_config_name}")
+            
+            # Get the handler directly
+            query_handler = orchestrator._get_handler(handler_config_name)
+            
+            # Get the current chat history
+            current_chat_history = orchestrator.history_manager.get_history(client_id)
+            
+            # Process the query with the handler
+            logger.info("Processing query with grid utility handler...")
+            ai_message = await query_handler.handle_query(prompt, current_chat_history)
+            
+            logger.info(f"Got AI response: {ai_message[:100]}...")
+            
+            # Add AI response to history
+            orchestrator.history_manager.add_ai_message(client_id, ai_message)
+            
+            return ai_message
+        except Exception as handler_error:
+            logger.error(f"Error processing query with handler: {str(handler_error)}", exc_info=True)
+            # Use fallback if handler fails
+            fallback_message = get_fallback_dfp_recommendation(transformer_data)
+            orchestrator.history_manager.add_ai_message(client_id, fallback_message)
+            return fallback_message
+    except Exception as e:
+        logger.error(f"Error getting DFP recommendations: {str(e)}", exc_info=True)
+        return get_fallback_dfp_recommendation(transformer_data)
+
+
+def get_fallback_dfp_recommendation(transformer_data: Dict[str, Any]) -> str:
+    """
+    Get a fallback DFP recommendation with random selection between options.
     
     Args:
         transformer_data: Data about the transformer with stress
         
     Returns:
-        List of DFP options
+        A hardcoded DFP recommendation
     """
-    # TODO: Replace with actual API call
-    # Simulate API call delay
-    await asyncio.sleep(1)
+    logger.info("Using fallback DFP recommendation")
     
-    # Return hardcoded options for now
-    return [
-        {
-            "id": 1,
-            "name": "Dynamic Demand Response (DDR)",
-            "description": "Dynamic Demand Response (DDR) rewards participants who can rapidly shift or curtail electricity usage during frequent, short-notice events. Participants receive the moderately high per-event compensation due to their ability to reliably and promptly adjust energy consumption patterns, significantly aiding grid stability and renewable energy integration.",
-            "reward": "$3–4.5 per kWh shifted",
-            "bonus": "15% extra if >90% compliance monthly",
-            "penalty": "15% reduction in incentives if compliance <75%",
-            "category": "Residential",
-            "minimum_load": 5
-        },
-        {
-            "id": 2,
-            "name": "Emergency Demand Reduction (EDR)",
-            "description": "Emergency Demand Reduction (EDR) is designed for consumers who can rapidly curtail significant energy use during critical, rare grid emergencies. These are infrequent but urgent events requiring immediate action. Participants are compensated significantly for availability but face substantial penalties for non-compliance due to critical grid dependence.",
-            "reward": "$250/year per kW available",
-            "bonus": "$10.00 per kWh curtailed during events",
-            "penalty": "50% annual availability fee reduction per missed event",
-            "category": "Residential",
-            "minimum_load": 5
-        }
-    ]
-
-
-async def broadcast_dfp_options(dfp_options: List[Dict[str, Any]], transformer_data: Dict[str, Any]):
-    """
-    Broadcasts DFP options to all connected WebSocket clients.
-    """
-    # Get all client connections
-    client_connections = connection_manager.get_all_connections()
+    # Randomly select which DFP option to recommend
+    recommended_option = random.choice(["DDR", "EDR"])
     
-    if not client_connections:
-        logger.warning("No connected clients to broadcast DFP options to")
-        return
-    
-    # Format the options message
-    options_message = "Based on the current stress levels, here are the available Demand Flexibility Program (DFP) options:\n\n"
-    
-    for i, option in enumerate(dfp_options, 1):
-        options_message += f"Option {i}: {option['name']}\n"
-        options_message += f"{option['description']}\n"
-        options_message += f"Reward: {option['reward']}\n"
-        options_message += f"Bonus: {option['bonus']}\n"
-        options_message += f"Penalty: {option['penalty']}\n"
-        options_message += f"Category: {option['category']}\n"
-        options_message += f"Minimum Load: {option['minimum_load']} kW\n\n"
-    
-    # Prepare the message
-    message = {
-        "type": "dfp_options",
-        "status": "success",
-        "message": options_message,
-        "options": dfp_options,
-        "transformer_data": transformer_data
-    }
-    
-    # Broadcast to all clients
-    for connection_id in client_connections:
-        await connection_manager.send_message(connection_id, message)
-    
-    logger.info(f"DFP options broadcasted to {len(client_connections)} clients")
-
-
-def get_recommended_option(dfp_options: List[Dict[str, Any]], transformer_data: Dict[str, Any]) -> int:
-    """
-    Determine the recommended DFP option based on transformer data and available options.
-    Currently returns a hardcoded recommendation.
-    
-    Args:
-        dfp_options: List of available DFP options
-        transformer_data: Data about the transformer with stress
-        
-    Returns:
-        The index of the recommended option (1-based)
-    """
-    # TODO: Implement actual recommendation logic
-    # For now, always recommend option 1
-    return 1
-
-
-async def broadcast_dfp_recommendation(recommended_option: int, dfp_options: List[Dict[str, Any]], transformer_data: Dict[str, Any]):
-    """
-    Broadcasts DFP recommendation to all connected WebSocket clients.
-    """
-    # Get all client connections
-    client_connections = connection_manager.get_all_connections()
-    
-    if not client_connections:
-        logger.warning("No connected clients to broadcast DFP recommendation to")
-        return
-    
-    # Get the recommended option details
-    option_index = recommended_option - 1  # Convert to 0-based index
-    if 0 <= option_index < len(dfp_options):
-        option_name = dfp_options[option_index]['name']
+    if recommended_option == "DDR":
+        recommendation_text = f"I recommend Option 1 – Dynamic Demand Response (DDR) for immediate grid relief. The current situation at {transformer_data['name']} shows a load of {transformer_data['current_load_kwh']:.2f} kWh ({transformer_data['load_percentage']:.1f}% of capacity), which requires a rapid but moderate response. DDR is ideal for this scenario as it can be quickly activated and provides immediate relief without excessive disruption."
+        option_number = "1"
+        option_name = "Dynamic Demand Response (DDR)"
     else:
-        option_name = "Unknown Option"
+        recommendation_text = f"I recommend Option 2 – Emergency Demand Reduction (EDR) for immediate grid relief. The current situation at {transformer_data['name']} shows a load of {transformer_data['current_load_kwh']:.2f} kWh ({transformer_data['load_percentage']:.1f}% of capacity), which requires a significant and immediate response. EDR is designed for critical situations like this and can provide the necessary load reduction quickly."
+        option_number = "2"
+        option_name = "Emergency Demand Reduction (EDR)"
     
-    # Format the recommendation message
-    recommendation_message = f"🔎I recommend Option {recommended_option} – {option_name} for immediate grid relief. Would you like to proceed?"
-    
-    # Prepare the message
-    message = {
-        "type": "dfp_recommendation",
-        "status": "success",
-        "message": recommendation_message,
-        "recommended_option": recommended_option,
-        "transformer_data": transformer_data
-    }
-    
-    # Broadcast to all clients
-    for connection_id in client_connections:
-        # Store transformer data for this client to enable activation
-        client_id = connection_manager.get_client(connection_id)
-        if client_id:
-            from app.routers.grid_utility_ws import transformer_data_store
-            transformer_data_store[client_id] = transformer_data
-        
-        await connection_manager.send_message(connection_id, message)
-    
-    logger.info(f"DFP recommendation broadcasted to {len(client_connections)} clients") 
+    return f"""Based on the grid stress alert for {transformer_data['name']} [{transformer_data['display_id']}], here are the available Demand Flexibility Program (DFP) options:
+
+Option 1: Dynamic Demand Response (DDR)
+Dynamic Demand Response (DDR) rewards participants who can rapidly shift or curtail electricity usage during frequent, short-notice events. Participants receive moderately high per-event compensation due to their ability to reliably and promptly adjust energy consumption patterns, significantly aiding grid stability and renewable energy integration.
+Reward: $3–4.5 per kWh shifted
+Bonus: 15% extra if >90% compliance monthly
+Penalty: 15% reduction in incentives if compliance <75%
+Category: Residential
+Minimum Load: 5 kW
+
+Option 2: Emergency Demand Reduction (EDR)
+Emergency Demand Reduction (EDR) is designed for consumers who can rapidly curtail significant energy use during critical, rare grid emergencies. These are infrequent but urgent events requiring immediate action. Participants are compensated significantly for availability but face substantial penalties for non-compliance due to critical grid dependence.
+Reward: $250/year per kW available
+Bonus: $10.00 per kWh curtailed during events
+Penalty: 50% annual availability fee reduction per missed event
+Category: Residential
+Minimum Load: 5 kW
+
+🔎{recommendation_text}
+
+Would you like to proceed with activating the {option_name} program?""" 

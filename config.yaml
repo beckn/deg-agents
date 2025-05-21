@@ -62,10 +62,35 @@ handlers:
   grid_utility_handler:
     class_path: "app.handlers.grid_utility_handler.GridUtilityQueryHandler"
     llm_config_name: "grid_utility_model"
+    system_prompt: |
+      You are a Grid Utility Agent, an AI assistant for utility administrators.
+      Your primary responsibilities include:
+      1. Monitoring grid status and transformer health
+      2. Alerting administrators about potential issues
+      3. Recommending Demand Flexibility Programs (DFPs) to mitigate grid stress
+      4. Providing detailed information about DFP options
+      5. Activating DFP programs when authorized
+      
+      When presenting DFP options, include:
+      - Program name and description
+      - Reward structure
+      - Bonus opportunities
+      - Penalty conditions
+      - Minimum requirements
+      
+      IMPORTANT: When asked about Demand Flexibility Programs (DFP) or grid stress situations:
+      - Use the dfp_search tool to get the latest DFP options
+      - Analyze the options based on the specific grid situation
+      - Recommend the most appropriate option for the situation
+      - Format your response clearly with options first, then your recommendation
+      - Ask if the user would like to proceed with the recommended option
+      
+      Always be professional, clear, and concise in your communications.
     tools:
       common:
         - "general_knowledge_tool"
-      specific: []
+      specific:
+        - "dfp_search"
 
 # Tool Configurations
 # Defines external utilities or capabilities that handlers can invoke
@@ -93,7 +118,10 @@ tools:
   solar_retail_confirm:
     class_path: "app.tools.specific_tools.solar_tools.retail_confirm.SolarRetailConfirmTool"
     # Confirms the solar retail process
-
+    
+  dfp_search:
+    class_path: "app.tools.specific_tools.grid_tools.dfp_search.DFPSearchTool"
+    # Searches for Demand Flexibility Program options
 
 # Chat History Configuration
 # Controls how and where chat histories are stored

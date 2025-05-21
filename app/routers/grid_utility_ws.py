@@ -34,7 +34,10 @@ async def grid_utility_websocket_endpoint(websocket: WebSocket, background_tasks
         # Generate a unique client_id for this connection if needed
         default_client_id = f"grid_client_{str(uuid.uuid4())[:8]}"
         
-        logger.info(f"Grid-Utility WebSocket connection established, connection ID: {connection_id}")
+        # Important: Associate the default client ID with this connection immediately
+        connection_manager.set_client(connection_id, default_client_id)
+        
+        logger.info(f"Grid-Utility WebSocket connection established, connection ID: {connection_id}, client ID: {default_client_id}")
         
         # Send acknowledgment to client
         await connection_manager.send_message(
@@ -42,6 +45,7 @@ async def grid_utility_websocket_endpoint(websocket: WebSocket, background_tasks
             {
                 "status": "connected",
                 "connection_id": connection_id,
+                "client_id": default_client_id,  # Include client ID in the response
                 "message": "Grid-Utility connection established. Model warming up in background."
             }
         )
@@ -68,8 +72,12 @@ async def grid_utility_websocket_endpoint(websocket: WebSocket, background_tasks
                 # Associate client ID with connection
                 connection_manager.set_client(connection_id, client_id)
                 
-                # Process the query directly without authentication
-                await process_grid_utility_query(connection_id, client_id, query)
+                # Check if this is a DFP activation request
+                if query.lower().strip() in ["yes", "yes, proceed", "proceed", "activate", "yes, activate"]:
+                    await handle_dfp_activation(connection_id, client_id, query)
+                else:
+                    # Process the query directly without authentication
+                    await process_grid_utility_query(connection_id, client_id, query)
                 
             except json.JSONDecodeError:
                 await connection_manager.send_message(
@@ -94,12 +102,6 @@ async def process_grid_utility_query(connection_id: str, client_id: str, query: 
     logger.info(f"Client {client_id} - Processing grid-utility query")
     
     try:
-        # Check if this is a response to a DFP recommendation
-        if client_id in transformer_data_store and query.lower() in ["yes", "yes, proceed", "proceed", "ok", "activate"]:
-            # Admin has approved the DFP activation
-            await activate_dfp(connection_id, client_id)
-            return
-        
         # Regular query processing (existing code)
         # Get or create the orchestrator instance for this client
         orchestrator = ClientOrchestrator.get_instance(client_id)
@@ -162,6 +164,135 @@ async def process_grid_utility_query(connection_id: str, client_id: str, query: 
         )
 
 
+async def handle_dfp_activation(connection_id: str, client_id: str, query: str):
+    """
+    Handle a DFP activation request.
+    """
+    logger.info(f"Client {client_id} - Processing DFP activation request")
+    
+    try:
+        # Get the orchestrator instance for this client
+        orchestrator = ClientOrchestrator.get_instance(client_id)
+        
+        # Add the query to history
+        orchestrator.history_manager.add_user_message(client_id, query)
+        
+        # Get the current chat history
+        current_chat_history = orchestrator.history_manager.get_history(client_id)
+        
+        # Get the handler for grid utility queries
+        handler_config_name = None
+        for route_cfg in orchestrator.app_config.query_router.routes:
+            if route_cfg.route_key == "grid_utility":
+                handler_config_name = route_cfg.handler_config_name
+                break
+        
+        if not handler_config_name:
+            raise ValueError("No handler configuration found for grid utility queries")
+        
+        # Get the handler
+        query_handler = orchestrator._get_handler(handler_config_name)
+        
+        # Add client_id to the chat history metadata to ensure it's available to the handler
+        if hasattr(current_chat_history, 'messages') and current_chat_history.messages:
+            for message in current_chat_history.messages:
+                if not hasattr(message, 'metadata'):
+                    message.metadata = {}
+                message.metadata['client_id'] = client_id
+        
+        # Log the client's DFP recommendations before processing
+        if hasattr(query_handler, 'client_dfp_recommendations'):
+            if client_id in query_handler.client_dfp_recommendations:
+                recommendation = query_handler.client_dfp_recommendations[client_id]
+                option = recommendation.get("option", {})
+                transformer = recommendation.get("transformer", {})
+                
+                logger.info(f"Found DFP recommendation for client {client_id}:")
+                logger.info(f"  Option: {option.get('name', 'Unknown')} ({option.get('id', 'Unknown')})")
+                logger.info(f"  Transformer: {transformer.get('name', 'Unknown')} [{transformer.get('id', 'Unknown')}]")
+                logger.info(f"  Current Load: {transformer.get('current_load', 'Unknown')}")
+                logger.info(f"  Load Percentage: {transformer.get('load_percentage', 'Unknown')}%")
+                logger.info(f"  Time Estimate: {transformer.get('time_estimate', 'Unknown')} minutes")
+            else:
+                logger.warning(f"No DFP recommendation found for client {client_id} in handler's client_dfp_recommendations")
+        else:
+            logger.warning("Handler does not have client_dfp_recommendations attribute")
+        
+        # Process the query with the handler
+        ai_message = await query_handler.handle_query(query, current_chat_history)
+        
+        # Add AI response to history
+        orchestrator.history_manager.add_ai_message(client_id, ai_message)
+        
+        # Send the initial response
+        await connection_manager.send_message(
+            connection_id,
+            {
+                "type": "dfp_activation",
+                "status": "success",
+                "client_id": client_id,
+                "message": ai_message
+            }
+        )
+        
+        # HACK: Always proceed with the activation flow, ignoring any error messages
+        # Simulate processing delay
+        await asyncio.sleep(3)
+        
+        # Generate a random number of households (between 30 and 60)
+        households = random.randint(30, 60)
+        
+        # Get transformer data or use a default
+        transformer_data = transformer_data_store.get(client_id, {"display_id": "TX160"})
+        transformer_id = transformer_data.get("display_id", "TX160")
+        
+        # Send participation message
+        participation_message = f"✅ {households} DER-enabled households have participated in the DFP program."
+        await connection_manager.send_message(
+            connection_id,
+            {
+                "type": "dfp_participation",
+                "status": "success",
+                "client_id": client_id,
+                "message": participation_message
+            }
+        )
+        
+        # Add participation message to history
+        orchestrator.history_manager.add_user_message(client_id, f"[SYSTEM ACTION] {participation_message}")
+        
+        # Simulate another delay
+        await asyncio.sleep(2)
+        
+        # Send success message
+        success_message = f"✔️ Central Feeder Hub [{transformer_id}] load is now back to normal."
+        await connection_manager.send_message(
+            connection_id,
+            {
+                "type": "dfp_success",
+                "status": "success",
+                "client_id": client_id,
+                "message": success_message
+            }
+        )
+        
+        # Add success message to history
+        orchestrator.history_manager.add_user_message(client_id, f"[SYSTEM ACTION] {success_message}")
+        
+        # Clear transformer data for this client
+        if client_id in transformer_data_store:
+            del transformer_data_store[client_id]
+    except Exception as e:
+        logger.error(f"An unexpected error occurred for client {client_id}: {e}")
+        await connection_manager.send_message(
+            connection_id,
+            {
+                "status": "error",
+                "message": f"An internal server error occurred: {str(e)}"
+            }
+        )
+
+
 # Add this function to handle DFP activation
 async def activate_dfp(connection_id: str, client_id: str):
     """
@@ -183,16 +314,26 @@ async def activate_dfp(connection_id: str, client_id: str):
         )
         return
     
+    # Get orchestrator for this client
+    orchestrator = ClientOrchestrator.get_instance(client_id)
+    
+    # Add activation command to history
+    orchestrator.history_manager.add_user_message(client_id, "Yes, proceed with the recommended DFP option.")
+    
     # Send activation message
+    activation_message = "✅ Proceeding to Activate Demand Flexibility Option 1 – Dynamic Demand Response (DDR). Please wait…"
     await connection_manager.send_message(
         connection_id,
         {
             "type": "dfp_activation",
             "status": "success",
             "client_id": client_id,
-            "message": "✅ Proceeding to Activate Demand Flexibility Option 1 – Dynamic Demand Response (DDR). Please wait…"
+            "message": activation_message
         }
     )
+    
+    # Add activation message to history as a user message with a special prefix
+    orchestrator.history_manager.add_user_message(client_id, f"[SYSTEM ACTION] {activation_message}")
     
     # Simulate processing delay
     await asyncio.sleep(3)
@@ -201,30 +342,38 @@ async def activate_dfp(connection_id: str, client_id: str):
     households = random.randint(30, 60)
     
     # Send participation message
+    participation_message = f"✅ {households} DER-enabled households have participated in DDR."
     await connection_manager.send_message(
         connection_id,
         {
             "type": "dfp_participation",
             "status": "success",
             "client_id": client_id,
-            "message": f"✅ {households} DER-enabled households have participated in DDR."
+            "message": participation_message
         }
     )
+    
+    # Add participation message to history
+    orchestrator.history_manager.add_user_message(client_id, f"[SYSTEM ACTION] {participation_message}")
     
     # Simulate another delay
     await asyncio.sleep(2)
     
     # Send success message
     transformer_id = transformer_data.get("display_id", "Unknown")
+    success_message = f"✔️ Central Feeder Hub [{transformer_id}] load is now back to normal."
     await connection_manager.send_message(
         connection_id,
         {
             "type": "dfp_success",
             "status": "success",
             "client_id": client_id,
-            "message": f"✔️ Central Feeder Hub [{transformer_id}] load is now back to normal."
+            "message": success_message
         }
     )
+    
+    # Add success message to history
+    orchestrator.history_manager.add_user_message(client_id, f"[SYSTEM ACTION] {success_message}")
     
     # Clear transformer data for this client
     if client_id in transformer_data_store:

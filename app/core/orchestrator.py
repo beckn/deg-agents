@@ -4,6 +4,9 @@ from app.core.history_manager import chat_history_manager
 from app.core.query_router import QueryRouter
 from app.handlers.base_handler import BaseQueryHandler
 from app.handlers.utils import import_class
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class ClientOrchestrator:
@@ -82,6 +85,8 @@ class ClientOrchestrator:
         5. Adds AI response to history.
         6. Returns AI response.
         """
+        logger.info(f"Client '{self.client_id}': Processing query: {query[:100]}...")
+        
         # 1. Add user query to history
         self.history_manager.add_user_message(self.client_id, query)
         current_chat_history = self.history_manager.get_history(self.client_id)
@@ -89,13 +94,22 @@ class ClientOrchestrator:
         # Fast path for greetings
         lower_query = query.lower().strip()
         if self._is_simple_greeting(lower_query):
+            logger.info(f"Client '{self.client_id}': Detected simple greeting, using fast path")
             greeting_response = self._get_greeting_response()
             self.history_manager.add_ai_message(self.client_id, greeting_response)
             return greeting_response
         
-        # 2. Route the query
-        # Pass history to router if it's configured to use it
-        route_key = await self.query_router.route_query(query, current_chat_history)
+        # Check for grid utility query prefix
+        if "[GRID_UTILITY_QUERY]" in query:
+            logger.info(f"Client '{self.client_id}': Detected [GRID_UTILITY_QUERY] prefix, forcing grid_utility route")
+            route_key = "grid_utility"
+        else:
+            # 2. Route the query
+            # Pass history to router if it's configured to use it
+            logger.info(f"Client '{self.client_id}': Routing query using query router")
+            route_key = await self.query_router.route_query(query, current_chat_history)
+        
+        logger.info(f"Client '{self.client_id}': Query routed to '{route_key}'")
         print(f"Client '{self.client_id}': Query routed to '{route_key}'")
 
         # Find the handler config name associated with this route_key
@@ -105,7 +119,10 @@ class ClientOrchestrator:
                 handler_config_name = route_cfg.handler_config_name
                 break
 
+        logger.info(f"Client '{self.client_id}': Using handler config '{handler_config_name}'")
+
         if not handler_config_name:
+            logger.warning(f"Client '{self.client_id}': No handler configured for route_key '{route_key}'. Defaulting to find a generic handler.")
             print(
                 f"Warning: No handler configured for route_key '{route_key}'. Defaulting to find a generic handler."
             )
@@ -119,8 +136,11 @@ class ClientOrchestrator:
 
         # 3. Get/Initialize the appropriate handler
         try:
+            logger.info(f"Client '{self.client_id}': Getting handler '{handler_config_name}'")
             query_handler = self._get_handler(handler_config_name)
+            logger.info(f"Client '{self.client_id}': Got handler of type {type(query_handler).__name__}")
         except Exception as e:
+            logger.error(f"Client '{self.client_id}': Error obtaining handler '{handler_config_name}': {e}", exc_info=True)
             print(
                 f"Error obtaining handler '{handler_config_name}' for client '{self.client_id}': {e}"
             )
@@ -128,8 +148,11 @@ class ClientOrchestrator:
 
         # 4. Handler processes the query
         try:
+            logger.info(f"Client '{self.client_id}': Handler '{handler_config_name}' processing query")
             ai_response = await query_handler.handle_query(query, current_chat_history)
+            logger.info(f"Client '{self.client_id}': Handler returned response: {ai_response[:100]}...")
         except Exception as e:
+            logger.error(f"Client '{self.client_id}': Error during query handling by '{handler_config_name}': {e}", exc_info=True)
             print(
                 f"Error during query handling by '{handler_config_name}' for client '{self.client_id}': {e}"
             )
@@ -173,3 +196,44 @@ class ClientOrchestrator:
         """Clears all cached client orchestrator instances."""
         cls._instances.clear()
         print("Cleared all client orchestrator instances.")
+
+    def get_handler(self, route_key: str) -> Optional[BaseQueryHandler]:
+        """
+        Get a specific handler by route key.
+        
+        Args:
+            route_key: The route key for the handler
+            
+        Returns:
+            The handler instance, or None if not found
+        """
+        # Check if the handler is already initialized
+        if route_key in self.query_handlers:
+            return self.query_handlers[route_key]
+        
+        # If not, initialize it
+        try:
+            # Get the handler config name from the router config
+            handler_config_name = None
+            for route in self.app_config.query_router.routes:
+                if route.route_key == route_key:
+                    handler_config_name = route.handler_config_name
+                    break
+            
+            if not handler_config_name:
+                logger.error(f"No handler config found for route key: {route_key}")
+                return None
+            
+            # Get the handler config - this is a dictionary, not an object with attributes
+            handler_config = self.app_config.handlers[handler_config_name]
+            
+            # Initialize the handler
+            handler = self._initialize_handler(handler_config, self.client_id)
+            
+            # Cache the handler
+            self.query_handlers[route_key] = handler
+            
+            return handler
+        except Exception as e:
+            logger.error(f"Error initializing handler for route key {route_key}: {str(e)}")
+            return None

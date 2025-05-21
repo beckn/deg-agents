@@ -4,6 +4,7 @@ import uvicorn
 import logging
 from app.routers import chat, websocket, grid_utility_ws, grid_alerts
 from app.middleware.auth_middleware import auth_middleware
+from app.core.websocket_manager import connection_manager
 
 # Configure logging
 logging.basicConfig(
@@ -40,6 +41,13 @@ async def health_check():
     """
     return {"status": "healthy"}
 
+@app.on_event("startup")
+async def startup_event():
+    """
+    Initialize components on application startup.
+    """
+    # Start the WebSocket cleanup task
+    await connection_manager.start_cleanup_task()
 
 if __name__ == "__main__":
     uvicorn.run("app.main:app", host="0.0.0.0", port=8000, reload=True)
