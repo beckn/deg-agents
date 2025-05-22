@@ -79,7 +79,7 @@ class DFPSearchTool(BaseTool):
             The DFP options as a formatted string
         """
         logger.info(f"DFPSearchTool running with query: {query}")
-        logger.info(f"Before API call, cache contains {len(cache['dfp_options'])} options")
+        # logger.info(f"Before API call, cache contains {len(cache['dfp_options'])} options")
         
         try:
             # Try to call the actual API
