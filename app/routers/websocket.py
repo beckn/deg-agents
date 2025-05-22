@@ -27,6 +27,9 @@ router = APIRouter(tags=["websocket"])
 # Add a dictionary to store the state of conversations
 dfp_conversation_state = {}
 
+# Add a dictionary to store DER IDs for each client
+client_der_ids = {}  # client_id -> list of DER IDs
+
 @router.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket, background_tasks: BackgroundTasks):
     """
@@ -378,19 +381,26 @@ async def handle_dfp_participation(connection_id: str, client_id: str, query: st
                 if der_data and isinstance(der_data, list):
                     # Filter for devices that are switched on and have significant power
                     high_power_devices = []
+                    selected_der_ids = []  # Store the DER IDs
                     
                     for device in der_data:
                         if device.get("switched_on", False) and "appliance" in device:
                             appliance = device["appliance"]
                             power_rating = appliance.get("powerRating", 0)
+                            device_id = device.get("id")
                             
                             # Only include devices with power rating > 500W
                             if power_rating > 500:
                                 high_power_devices.append({
                                     "name": appliance.get("name", "Unknown Device"),
-                                    "power": power_rating
+                                    "power": power_rating,
+                                    "id": device_id  # Store the device ID
                                 })
                                 total_power += power_rating
+                                
+                                # Add the device ID to our list
+                                if device_id:
+                                    selected_der_ids.append(device_id)
                     
                     # Sort devices by power consumption (highest first)
                     high_power_devices.sort(key=lambda x: x["power"], reverse=True)
@@ -398,6 +408,13 @@ async def handle_dfp_participation(connection_id: str, client_id: str, query: st
                     # Take the top 3 devices
                     der_devices = high_power_devices[:3]
                     has_der_data = len(der_devices) > 0
+                    
+                    # Store the top 3 DER IDs for this client
+                    if has_der_data:
+                        # Get the IDs of the top 3 devices
+                        top_der_ids = [device.get("id") for device in der_devices if device.get("id")]
+                        client_der_ids[client_id] = top_der_ids
+                        logger.info(f"Stored DER IDs for client {client_id}: {client_der_ids[client_id]}")
             else:
                 logger.error(f"Failed to fetch DER data: {response.status_code} - {response.text}")
         except Exception as e:
@@ -456,6 +473,14 @@ async def handle_control_permission(connection_id: str, client_id: str, query: s
     Handles a user's permission to control their devices.
     """
     logger.info(f"Handling control permission for client {client_id}")
+
+
+    # Log any DER IDs associated with this client
+    if client_id in client_der_ids:
+        der_ids = client_der_ids[client_id]
+        logger.info(f"DER IDs associated with client {client_id}: {der_ids}")
+    else:
+        logger.info(f"No DER IDs found for client {client_id}")
     
     # First send a processing message to show loading on client side
     await connection_manager.send_message(
@@ -501,6 +526,120 @@ async def handle_control_permission(connection_id: str, client_id: str, query: s
         # Log the response
         logger.info(f"API response status code: {response.status_code}")
         logger.info(f"API response: {response.text}")
+
+
+
+        # Get the DER IDs for this client
+        der_ids = client_der_ids.get(client_id, [])
+
+        
+        # Make API call to activate DER schedules if we have DER IDs
+        if der_ids:
+            try:
+                # Prepare the API request for DER activation
+                der_api_url = f"https://playground.becknprotocol.io/meter-data-simulator/ders/switch-off"
+
+                der_response = requests.put(
+                    der_api_url,
+                    headers={"Content-Type": "application/json"},
+                    json={"der_ids": der_ids},
+                    timeout=10
+                )
+                
+                # Log the response
+                logger.info(f"DER switch off API response status code: {der_response.status_code}")
+                logger.info(f"DER switch off API response: {der_response.text}")
+                
+                # Check for success
+                if der_response.status_code != 200:
+                    logger.error(f"Failed to switch off DER for DER ID {der_ids}")
+                    raise Exception(f"DER switch off failed for ID {der_ids}")
+
+
+                
+                # Make an API call for each DER ID
+                # for der_id in der_ids:
+                #     der_payload = {
+                #         "itemId": str(der_id)  # Ensure DER ID is string
+                #     }
+                    
+                #     logger.info(f"Making API call to switch off DER for DER ID {der_id}")
+                    
+                #     # Make the API call
+                #     der_response = requests.put(
+                #         der_api_url,
+                #         headers={"Content-Type": "application/json"},
+                #         json=der_ids,
+                #         timeout=10
+                #     )
+                    
+                #     # Log the response
+                #     logger.info(f"DER switch off API response status code: {der_response.status_code}")
+                #     logger.info(f"DER switch off API response: {der_response.text}")
+                    
+                #     # Check for success
+                #     if der_response.status_code != 200:
+                #         logger.error(f"Failed to switch off DER for DER ID {der_id}")
+                #         raise Exception(f"DER switch off failed for ID {der_id}")
+                        
+            except Exception as e:
+                logger.error(f"Error switching off DER devices: {str(e)}", exc_info=True)
+                raise Exception("Failed to switch off one or more DER devices")
+        else:
+            logger.warning(f"No DER IDs found for client {client_id} during DER switch off")
+
+
+        # Make API call to update order status
+        try:
+            update_api_url = "https://bap2-ps-client-deg.becknprotocol.io/update"
+            
+            update_payload = {
+                "context": {
+                    "domain": "deg:schemes",
+                    "action": "update", 
+                    "location": {
+                        "country": {
+                            "code": "USA"
+                        },
+                        "city": {
+                            "code": "NANP:628"
+                        }
+                    },
+                    "version": "1.1.0",
+                    "bap_id": "bap2-ps-network-deg.becknprotocol.io",
+                    "bap_uri": "https://bap2-ps-network-deg.becknprotocol.io",
+                    "bpp_id": "bpp-ps-network-deg.becknprotocol.io", 
+                    "bpp_uri": "https://bpp-ps-network-deg.becknprotocol.io",
+                    "timestamp": "1747920967"
+                },
+                "message": {
+                    "order": {
+                        "id": "3789"
+                    },
+                    "update_target": "item"
+                }
+            }
+            
+            logger.info("Making API call to update order status")
+            
+            update_response = requests.post(
+                update_api_url,
+                headers={"Content-Type": "application/json"},
+                json=update_payload,
+                timeout=10
+            )
+            
+            logger.info(f"Update API response status code: {update_response.status_code}")
+            logger.info(f"Update API response: {update_response.text}")
+            
+            if update_response.status_code != 200:
+                logger.error("Failed to update order status")
+                raise Exception("Order status update failed")
+                
+        except Exception as e:
+            logger.error(f"Error updating order status: {str(e)}", exc_info=True)
+            raise Exception("Failed to update order status")
+
         
         # Send confirmation messages
         confirmation_message = "✅ Thank you! We've successfully recorded your consent, activated the schedules and notified the system operator."
