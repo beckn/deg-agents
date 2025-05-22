@@ -37,6 +37,9 @@ async def grid_utility_websocket_endpoint(websocket: WebSocket, background_tasks
         # Important: Associate the default client ID with this connection immediately
         connection_manager.set_client(connection_id, default_client_id)
         
+        # Set client type to utility_dashboard
+        connection_manager.set_client_type(connection_id, "utility_dashboard")
+        
         logger.info(f"Grid-Utility WebSocket connection established, connection ID: {connection_id}, client ID: {default_client_id}")
         
         # Send acknowledgment to client

@@ -40,6 +40,9 @@ async def websocket_endpoint(websocket: WebSocket, background_tasks: BackgroundT
         # Let the connection manager accept the connection
         connection_id = await connection_manager.connect(websocket)
         
+        # Set client type to residential_user
+        connection_manager.set_client_type(connection_id, "residential_user")
+        
         # Generate a unique client_id for this connection if needed
         default_client_id = f"client_{str(uuid.uuid4())[:8]}"
         

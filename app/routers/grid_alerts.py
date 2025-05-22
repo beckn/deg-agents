@@ -233,18 +233,26 @@ async def process_grid_alert(alert_message: str, transformer_data: Dict[str, Any
                 from app.routers.grid_utility_ws import transformer_data_store
                 transformer_data_store[client_id] = transformer_data
                 
-                # Send the agent's response directly
-                logger.info("Sending agent response to client...")
-                await connection_manager.send_message(
-                    connection_id,
-                    {
-                        "type": "dfp_options_and_recommendation",
-                        "status": "success",
-                        "message": agent_response,
-                        "transformer_data": transformer_data
-                    }
-                )
-                logger.info("Agent response sent successfully")
+                # Before sending the agent's response, check the client type
+                logger.info("Checking client type before sending agent response...")
+                client_type = connection_manager.get_client_type(connection_id)
+
+                logger.info(f"Client type for connection {connection_id}: {client_type}")
+
+                # Only send the alert to utility dashboard clients
+                if client_type == "utility_dashboard":
+                    logger.info("Sending agent response to utility dashboard client...")
+                    await connection_manager.send_message(
+                        connection_id,
+                        {
+                            "type": "dfp_options_and_recommendation",
+                            "status": "success",
+                            "message": agent_response,
+                            "transformer_data": transformer_data
+                        }
+                    )
+                else:
+                    logger.info(f"Skipping alert for non-utility client (type: {client_type})")
             except Exception as e:
                 logger.error(f"Error processing client {connection_id}: {str(e)}", exc_info=True)
     except Exception as e:
@@ -277,13 +285,21 @@ async def broadcast_grid_alert(alert_message: str, transformer_data: Dict[str, A
     # Track successful sends
     successful_connections = set()
     
-    # Broadcast to all clients
+    # Broadcast to all clients, but only to utility dashboard clients
     for connection_id in client_connections:
-        success = await connection_manager.send_message(connection_id, message)
-        if success:
-            successful_connections.add(connection_id)
+        # Check client type
+        client_type = connection_manager.get_client_type(connection_id)
+        
+        # Only send to utility dashboard clients
+        if client_type == "utility_dashboard":
+            logger.info(f"Sending grid alert to utility dashboard client: {connection_id}")
+            success = await connection_manager.send_message(connection_id, message)
+            if success:
+                successful_connections.add(connection_id)
+        else:
+            logger.info(f"Skipping grid alert for non-utility client (type: {client_type}): {connection_id}")
     
-    logger.info(f"Grid alert broadcasted to {len(successful_connections)} clients")
+    logger.info(f"Grid alert broadcasted to {len(successful_connections)} utility dashboard clients")
     
     return successful_connections
 

@@ -13,10 +13,11 @@ class WebSocketManager:
     """
     
     def __init__(self):
-        self.active_connections: Dict[str, WebSocket] = {}
-        self.client_connections: Dict[str, str] = {}  # Maps client_id to connection_id
-        self.connection_tokens: Dict[str, str] = {}  # Maps connection_id to token
-        self.meter_connections = {}
+        self.active_connections = {}  # connection_id -> WebSocket
+        self.client_connections = {}  # client_id -> connection_id
+        self.connection_tokens = {}   # connection_id -> token
+        self.meter_connections = {}   # meter_id -> connection_id
+        self.client_types = {}        # connection_id -> client_type
     
     async def connect(self, websocket: WebSocket) -> str:
         """
@@ -206,6 +207,15 @@ class WebSocketManager:
         Get the connection ID associated with a meter ID.
         """
         return self.meter_connections.get(meter_id)
+
+    def set_client_type(self, connection_id: str, client_type: str):
+        """Set the client type for a connection."""
+        if connection_id in self.active_connections:
+            self.client_types[connection_id] = client_type
+
+    def get_client_type(self, connection_id: str) -> Optional[str]:
+        """Get the client type for a connection."""
+        return self.client_types.get(connection_id)
 
 # Create a singleton instance
 connection_manager = WebSocketManager() 
