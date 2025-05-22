@@ -352,17 +352,83 @@ async def handle_dfp_participation(connection_id: str, client_id: str, query: st
         }
     )
     
+    # Get the meter ID for this client
+    meter_id = connection_manager.get_meter_id_by_connection(connection_id)
+    
+    # Initialize variables for DER data
+    der_devices = []
+    total_power = 0
+    has_der_data = False
+    
+    if meter_id:
+        logger.info(f"Fetching DER data for meter ID: {meter_id}")
+        
+        # Make API call to get DER data
+        try:
+            url = f"https://playground.becknprotocol.io/meter-data-simulator/der/{meter_id}"
+            headers = {'Content-Type': 'application/json'}
+            
+            response = requests.get(url, headers=headers)
+            
+            if response.status_code == 200:
+                der_data = response.json()
+                logger.info(f"DER data for meter ID {meter_id}: {der_data}")
+                
+                # Process the DER data
+                if der_data and isinstance(der_data, list):
+                    # Filter for devices that are switched on and have significant power
+                    high_power_devices = []
+                    
+                    for device in der_data:
+                        if device.get("switched_on", False) and "appliance" in device:
+                            appliance = device["appliance"]
+                            power_rating = appliance.get("powerRating", 0)
+                            
+                            # Only include devices with power rating > 500W
+                            if power_rating > 500:
+                                high_power_devices.append({
+                                    "name": appliance.get("name", "Unknown Device"),
+                                    "power": power_rating
+                                })
+                                total_power += power_rating
+                    
+                    # Sort devices by power consumption (highest first)
+                    high_power_devices.sort(key=lambda x: x["power"], reverse=True)
+                    
+                    # Take the top 3 devices
+                    der_devices = high_power_devices[:3]
+                    has_der_data = len(der_devices) > 0
+            else:
+                logger.error(f"Failed to fetch DER data: {response.status_code} - {response.text}")
+        except Exception as e:
+            logger.error(f"Error fetching DER data: {str(e)}")
+    else:
+        logger.warning(f"No meter ID found for connection {connection_id}")
+    
     # Add a delay to simulate processing time
     await asyncio.sleep(1.5)
     
-    # Send the DER scheme message with question
-    der_message = (
-        "🙌 Great! You can contribute by temporarily turning off the following DERs (Distributed Energy Resources) in your home:\n\n"
-        "HVAC – 3.5 kW\n"
-        "Washing Machine – 1.8 kW\n"
-        "Dish Washer – 1.2 kW\n\n"
-        "Would you like to approve the plan and grant control permission to make device actions compliant?"
-    )
+    # Create the DER scheme message with question
+    if has_der_data:
+        # Create a personalized message with the actual devices
+        device_list = "\n".join([f"{device['name']} – {device['power']/1000:.1f} kW" for device in der_devices])
+        total_power_kw = total_power / 1000
+        
+        der_message = (
+            f"🙌 Great! You can contribute by temporarily turning off the following high-power devices in your home:\n\n"
+            f"{device_list}\n\n"
+            f"Total potential reduction: {total_power_kw:.1f} kW\n\n"
+            f"Would you like to approve the plan and grant control permission to make device actions compliant?"
+        )
+    else:
+        # Use a default message if no DER data is available
+        der_message = (
+            "🙌 Great! You can contribute by temporarily turning off the following DERs (Distributed Energy Resources) in your home:\n\n"
+            "HVAC – 3.5 kW\n"
+            "Washing Machine – 1.8 kW\n"
+            "Dish Washer – 1.2 kW\n\n"
+            "Would you like to approve the plan and grant control permission to make device actions compliant?"
+        )
     
     await connection_manager.send_message(
         connection_id,

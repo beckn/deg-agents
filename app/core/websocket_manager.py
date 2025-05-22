@@ -217,5 +217,21 @@ class WebSocketManager:
         """Get the client type for a connection."""
         return self.client_types.get(connection_id)
 
+    def get_meter_id_by_connection(self, connection_id: str) -> Optional[str]:
+        """
+        Get the meter ID associated with a connection ID.
+        
+        Args:
+            connection_id: The connection ID
+            
+        Returns:
+            The meter ID, or None if no meter ID is associated with this connection
+        """
+        # Reverse lookup in meter_connections
+        for meter_id, conn_id in self.meter_connections.items():
+            if conn_id == connection_id:
+                return meter_id
+        return None
+
 # Create a singleton instance
 connection_manager = WebSocketManager() 
