@@ -247,37 +247,37 @@ async def handle_dfp_activation(connection_id: str, client_id: str, query: str):
         transformer_id = transformer_data.get("display_id", "TX160")
         
         # Send participation message
-        participation_message = f"✅ {households} DER-enabled households have participated in the DFP program."
-        await connection_manager.send_message(
-            connection_id,
-            {
-                "type": "dfp_participation",
-                "status": "success",
-                "client_id": client_id,
-                "message": participation_message
-            }
-        )
+        # participation_message = f"✅ {households} DER-enabled households have participated in the DFP program."
+        # await connection_manager.send_message(
+        #     connection_id,
+        #     {
+        #         "type": "dfp_participation",
+        #         "status": "success",
+        #         "client_id": client_id,
+        #         "message": participation_message
+        #     }
+        # )
         
         # Add participation message to history
-        orchestrator.history_manager.add_user_message(client_id, f"[SYSTEM ACTION] {participation_message}")
+        # orchestrator.history_manager.add_user_message(client_id, f"[SYSTEM ACTION] {participation_message}")
         
         # Simulate another delay
         await asyncio.sleep(2)
         
         # Send success message
         success_message = f"✔️ Central Feeder Hub [{transformer_id}] load is now back to normal."
-        await connection_manager.send_message(
-            connection_id,
-            {
-                "type": "dfp_success",
-                "status": "success",
-                "client_id": client_id,
-                "message": success_message
-            }
-        )
+        # await connection_manager.send_message(
+        #     connection_id,
+        #     {
+        #         "type": "dfp_success",
+        #         "status": "success",
+        #         "client_id": client_id,
+        #         "message": success_message
+        #     }
+        # )
         
         # Add success message to history
-        orchestrator.history_manager.add_user_message(client_id, f"[SYSTEM ACTION] {success_message}")
+        # orchestrator.history_manager.add_user_message(client_id, f"[SYSTEM ACTION] {success_message}")
         
         # Clear transformer data for this client
         if client_id in transformer_data_store:

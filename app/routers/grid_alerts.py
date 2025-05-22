@@ -1,8 +1,10 @@
-from fastapi import APIRouter, BackgroundTasks
-from typing import Dict, Any, List, Set
+from fastapi import APIRouter, BackgroundTasks, HTTPException, Body
+from typing import Dict, Any, List, Set, Optional
 import logging
 import random
 import asyncio
+import requests
+import json
 from app.core.websocket_manager import connection_manager
 from app.core.orchestrator import ClientOrchestrator
 import uuid
@@ -18,37 +20,111 @@ class SimpleGridAlertRequest(BaseModel):
     pass
 
 @router.post("/grid-alerts/consumer")
-async def simple_grid_alert(request: SimpleGridAlertRequest = None):
+async def simple_grid_alert(request: Dict[str, Any] = Body(...)):
     """
-    A simple endpoint to send a grid alert message to all authenticated clients.
-    No request body needed.
+    Endpoint to receive Beckn protocol grid alerts and send to connected clients.
     """
-    logger.info(f"Received simple grid alert request")
-    
-    # Create a simple alert message with incentive information
-    alert_message = {
-        "type": "grid_alert",
-        "status": "success",
-        "message": "⚠️ Attention! We have detected a grid overload in your area. To help stabilize the grid, we are activating our Demand Flexibility Program.\n\nWould you like to participate?\n✅ Incentives: Earn $3–4.5 per kWh of reduced consumption\n✅ Incentives: 15% bonus if you maintain >90% participation this month."
-    }
-    
-    # Get all active connections
-    connections = connection_manager.get_all_connections()
-    logger.info(f"Found {len(connections)} active connections")
+    logger.info(f"Received grid alert request payload")
     
     # Track successful sends
     successful_sends = 0
     
-    # Send notification only to authenticated clients
-    for connection_id in connections:
-        # Check if the connection has a token (is authenticated)
-        if connection_manager.is_authenticated(connection_id):
-            success = await connection_manager.send_message(connection_id, alert_message)
-            if success:
-                successful_sends += 1
+    # Log the request payload
+    logger.info(f"Request payload: {json.dumps(request, indent=2)}")
     
-    logger.info(f"Alert sent to {successful_sends} authenticated clients")
-    return {"status": "success", "message": f"Alert sent to {successful_sends} authenticated clients"}
+    try:
+        # Extract order_id from the Beckn protocol request
+        order_id = None
+        
+        # Navigate through the nested structure to find the order ID
+        if "responses" in request and len(request["responses"]) > 0:
+            response = request["responses"][0]
+            if "message" in response and "order" in response["message"]:
+                order = response["message"]["order"]
+                order_id = order.get("id")
+        
+        if not order_id:
+            logger.error("Could not extract order_id from request")
+            return {"status": "error", "message": "Could not extract order_id from request"}
+        
+        logger.info(f"Extracted order_id: {order_id}")
+        
+        # Fetch meter IDs associated with the order_id
+        meter_ids = await fetch_meter_ids_by_subscription(order_id)
+        
+        if not meter_ids:
+            logger.warning(f"No meters found for order_id: {order_id}")
+            return {"status": "warning", "message": f"No meters found for order_id: {order_id}"}
+        
+        logger.info(f"Found meter IDs: {meter_ids}")
+        
+        # Create a grid alert message
+        alert_message = {
+            "type": "grid_alert",
+            "status": "success",
+            "message": "⚠️ Attention! We have detected a grid overload in your area. To help stabilize the grid, we are activating our Demand Flexibility Program.\n\nWould you like to participate?\n✅ Incentives: Earn $3–4.5 per kWh of reduced consumption\n✅ Incentives: 15% bonus if you maintain >90% participation this month.",
+            "order_id": order_id
+        }
+        
+        # Send alert to users with matching meter IDs
+        for meter_id in meter_ids:
+            # Get connection ID for this meter ID
+            connection_id = connection_manager.get_connection_by_meter_id(str(meter_id))
+            
+            if connection_id:
+                # Send the alert
+                success = await connection_manager.send_message(connection_id, alert_message)
+                if success:
+                    successful_sends += 1
+                    logger.info(f"Alert sent successfully to meter ID: {meter_id}, connection ID: {connection_id}")
+                else:
+                    logger.warning(f"Failed to send alert to meter ID: {meter_id}, connection ID: {connection_id}")
+            else:
+                logger.warning(f"No active connection found for meter ID: {meter_id}")
+        
+        return {
+            "status": "success", 
+            "message": f"Alert sent to {successful_sends} clients with matching meter IDs",
+            "order_id": order_id,
+            "meters_count": len(meter_ids),
+            "successful_sends": successful_sends
+        }
+        
+    except Exception as e:
+        logger.error(f"Error processing grid alert: {str(e)}", exc_info=True)
+        return {"status": "error", "message": f"Error processing grid alert: {str(e)}"}
+
+async def fetch_meter_ids_by_subscription(subscription_id: str) -> List[int]:
+    """
+    Fetch meter IDs associated with a subscription ID.
+    """
+    # API URL for fetching meters by subscription ID
+    api_url = f"https://playground.becknprotocol.io/meter-data-simulator/meters/subscription/{subscription_id}"
+    
+    try:
+        # Make the API request
+        response = requests.get(api_url, timeout=10)
+        
+        # Check if the request was successful
+        if response.status_code == 200:
+            # Parse the response
+            data = response.json()
+            
+            # Extract meter IDs from the response
+            meter_ids = []
+            if "data" in data and isinstance(data["data"], list):
+                for meter in data["data"]:
+                    if "id" in meter:
+                        meter_ids.append(meter["id"])
+            
+            logger.info(f"Found {len(meter_ids)} meters for subscription ID {subscription_id}: {meter_ids}")
+            return meter_ids
+        else:
+            logger.error(f"API request failed with status code {response.status_code}: {response.text}")
+            return []
+    except Exception as e:
+        logger.error(f"Error fetching meters by subscription: {str(e)}")
+        return []
 
 @router.post("/grid-alerts/transformer-stress")
 async def transformer_stress_alert(data: Dict[str, Any], background_tasks: BackgroundTasks):

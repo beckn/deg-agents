@@ -180,6 +180,9 @@ async def process_authentication(connection_id: str, client_id: str, query: str,
         if is_valid:
             logger.info(f"Client {client_id} - Valid meter ID: {query}")
             
+            # Associate meter ID with connection in connection manager
+            connection_manager.set_meter_id(connection_id, query)
+            
             # Generate OTP
             otp = otp_service.generate_otp(query)
             logger.info(f"Client {client_id} - Generated OTP for meter ID {query}: {otp}")

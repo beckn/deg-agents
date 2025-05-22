@@ -16,6 +16,7 @@ class WebSocketManager:
         self.active_connections: Dict[str, WebSocket] = {}
         self.client_connections: Dict[str, str] = {}  # Maps client_id to connection_id
         self.connection_tokens: Dict[str, str] = {}  # Maps connection_id to token
+        self.meter_connections = {}
     
     async def connect(self, websocket: WebSocket) -> str:
         """
@@ -51,15 +52,25 @@ class WebSocketManager:
     
     async def disconnect(self, connection_id: str):
         """
-        Disconnect a WebSocket connection.
+        Disconnect a client and clean up resources.
         """
+        # Find and remove any meter ID mappings for this connection
+        meter_ids_to_remove = []
+        for meter_id, conn_id in self.meter_connections.items():
+            if conn_id == connection_id:
+                meter_ids_to_remove.append(meter_id)
+        
+        for meter_id in meter_ids_to_remove:
+            del self.meter_connections[meter_id]
+        
+        # Existing disconnect logic
         if connection_id in self.active_connections:
             del self.active_connections[connection_id]
-            # Remove any client associations
-            for client_id, conn_id in list(self.client_connections.items()):
-                if conn_id == connection_id:
-                    del self.client_connections[client_id]
-            logger.info(f"WebSocket disconnected: {connection_id}")
+        if connection_id in self.client_connections:
+            del self.client_connections[connection_id]
+        if connection_id in self.connection_tokens:
+            del self.connection_tokens[connection_id]
+        logger.info(f"Client disconnected: {connection_id}")
     
     async def send_message(self, connection_id: str, message: Dict[str, Any]) -> bool:
         """
@@ -182,6 +193,19 @@ class WebSocketManager:
         Checks if a connection is authenticated.
         """
         return connection_id in self.connection_tokens
+
+    def set_meter_id(self, connection_id: str, meter_id: str):
+        """
+        Associate a meter ID with a connection ID.
+        """
+        self.meter_connections[meter_id] = connection_id
+        logger.info(f"Associated meter ID {meter_id} with connection ID {connection_id}")
+
+    def get_connection_by_meter_id(self, meter_id: str) -> Optional[str]:
+        """
+        Get the connection ID associated with a meter ID.
+        """
+        return self.meter_connections.get(meter_id)
 
 # Create a singleton instance
 connection_manager = WebSocketManager() 
